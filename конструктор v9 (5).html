@@ -147,7 +147,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 
   <div class="sidebar-footer">
-    <button class="act-btn" onclick="undoAction()"><span class="icon">↩</span> Отменить (Ctrl+Z)</button>
+    <button class="act-btn" onclick="undoAction()" id="undoBtn"><span class="icon">↩</span> Отменить (Ctrl+Z)</button>
+    <button class="act-btn" onclick="redoAction()" id="redoBtn" style="opacity:0.5; pointer-events:none;"><span class="icon">↪</span> Вперед (Ctrl+Y)</button>
     <button class="act-btn" onclick="clearAll()"><span class="icon">🗑</span> Очистить всё</button>
   </div>
 </div>
@@ -410,6 +411,7 @@ const AppState = {
   elements: [],
   selectedIds: new Set(),
   history: [],
+  redoStack: [],
   nextId: 1,
   panX: 0,
   panY: 0,
@@ -436,7 +438,7 @@ const zoomResponsiveTypes = new Set(['flex-arrow','flex-arrow-dash','mine','tren
 
 // State accessors for backward compatibility
 let currentTool = 'select', currentSymbol = null, activeForce = 'friendly';
-let elements = [], selectedIds = new Set(), history = [], nextId = 1;
+let elements = [], selectedIds = new Set(), history = [], redoStack = [], nextId = 1;
 let panX = 0, panY = 0, zoom = 1;
 let isPanning = false, panStartX = 0, panStartY = 0;
 let isDrawing = false, drawPts = [], lastAddedPt = null;
@@ -454,6 +456,7 @@ function syncState() {
   elements = AppState.elements;
   selectedIds = AppState.selectedIds;
   history = AppState.history;
+  redoStack = AppState.redoStack || [];
   nextId = AppState.nextId;
   panX = AppState.panX;
   panY = AppState.panY;
@@ -483,6 +486,7 @@ function updateAppState() {
   AppState.elements = elements;
   AppState.selectedIds = selectedIds;
   AppState.history = history;
+  AppState.redoStack = redoStack;
   AppState.nextId = nextId;
   AppState.panX = panX;
   AppState.panY = panY;
@@ -1018,6 +1022,8 @@ function serializeProject(){
 
 function saveProject(){
   const project=serializeProject();
+  // Save redoStack as well
+  project.redoStack = redoStack;
   const blob=new Blob([JSON.stringify(project,null,2)],{type:'application/json;charset=utf-8'});
   downloadBlob(blob,`combat_plan_${safeStamp()}.json`);
   showToast(`Проект сохранен: ${project.elements.length} элементов, ${project.images.length} карт`,'success');
@@ -1108,6 +1114,7 @@ function applyProject(project){
     dragState = null; 
     resizeState = null; 
     history = [];
+    redoStack = [];
 
     const s = project.settings || {};
     panX = finiteNumber(s.panX, 0); 
@@ -1134,10 +1141,16 @@ function applyProject(project){
     nextId = Math.max(Number(project.nextId || 1), maxElId + 1);
     imgNextId = Math.max(Number(project.imgNextId || 1), maxImgId + 1);
     
+    // Load redoStack if present
+    if(Array.isArray(project.redoStack)){
+      redoStack = project.redoStack;
+    }
+    
     setForceSide(activeForce);
     setTool('select');
     lastDecorZoom = null;
     updateTransform();
+    updateUndoRedoButtons();
     
     showToast(`Проект загружен: ${elements.length} элементов, ${images.length} карт`, 'success');
   } catch(err) {
@@ -1625,11 +1638,32 @@ function saveHistory(){
     imgNextId
   });
   if(history.length>60) history.shift();
+  redoStack = []; // Clear redo stack on new action
+  updateUndoRedoButtons();
+}
+
+function updateUndoRedoButtons(){
+  const undoBtn = document.getElementById('undoBtn');
+  const redoBtn = document.getElementById('redoBtn');
+  if(undoBtn) {
+    undoBtn.style.opacity = history.length ? '1' : '0.5';
+    undoBtn.style.pointerEvents = history.length ? 'auto' : 'none';
+  }
+  if(redoBtn) {
+    redoBtn.style.opacity = redoStack.length ? '1' : '0.5';
+    redoBtn.style.pointerEvents = redoStack.length ? 'auto' : 'none';
+  }
 }
 
 function undoAction(){
   if(!history.length) return;
   const snap = history.pop(); 
+  redoStack.push({
+    elements: elements.map(el=>({id:el.id,type:el.type,data:cloneData(el.data),label:el.el.dataset.label||''})),
+    images: images.map(im=>({id:im.id,dataUrl:im.dataUrl,cx:im.cx,cy:im.cy,w:im.w,h:im.h,origW:im.origW,origH:im.origH})),
+    nextId,
+    imgNextId
+  });
   // Clear DOM properly
   while(elemGroup.firstChild) elemGroup.removeChild(elemGroup.firstChild);
   while(imgGrp.firstChild) imgGrp.removeChild(imgGrp.firstChild);
@@ -1654,7 +1688,45 @@ function undoAction(){
   lastDecorZoom = null;
   updateImageInteractivity(); 
   updateTransform();
+  updateUndoRedoButtons();
   showToast('Действие отменено', 'success');
+}
+
+function redoAction(){
+  if(!redoStack.length) return;
+  const snap = redoStack.pop();
+  history.push({
+    elements: elements.map(el=>({id:el.id,type:el.type,data:cloneData(el.data),label:el.el.dataset.label||''})),
+    images: images.map(im=>({id:im.id,dataUrl:im.dataUrl,cx:im.cx,cy:im.cy,w:im.w,h:im.h,origW:im.origW,origH:im.origH})),
+    nextId,
+    imgNextId
+  });
+  // Clear DOM properly
+  while(elemGroup.firstChild) elemGroup.removeChild(elemGroup.firstChild);
+  while(imgGrp.firstChild) imgGrp.removeChild(imgGrp.firstChild);
+  elements = []; 
+  images = [];
+  // Clear wide arrow masks to prevent memory leaks
+  clearWideArrowMasks();
+  
+  const snapElements = Array.isArray(snap) ? snap : (snap.elements || []);
+  snapElements.forEach(s => { 
+    const data = cloneData(s.data || {}), 
+    el = spawnEl({...s, data}); 
+    elements.push({id: s.id, type: s.type, data, el}); 
+  });
+  if(!Array.isArray(snap) && (snap.images || []).length){
+    (snap.images || []).forEach(restoreImage);
+  }
+  nextId = (!Array.isArray(snap) && snap.nextId) || (elements.length ? Math.max(...elements.map(e => e.id)) + 1 : 1);
+  imgNextId = (!Array.isArray(snap) && snap.imgNextId) || (images.length ? Math.max(...images.map(i => i.id)) + 1 : 1);
+  clearSelection(); 
+  deselectImages();
+  lastDecorZoom = null;
+  updateImageInteractivity(); 
+  updateTransform();
+  updateUndoRedoButtons();
+  showToast('Действие возвращено', 'success');
 }
 
 function spawnEl(s){
@@ -2143,6 +2215,7 @@ function onKeyDown(e){
   }
   if((e.key==='Delete'||e.key==='Backspace')&&!e.ctrlKey){ e.preventDefault(); deleteSelected(); return; }
   if(e.ctrlKey&&e.key==='z'){ e.preventDefault(); undoAction(); return; }
+  if(e.ctrlKey&&e.key==='y'){ e.preventDefault(); redoAction(); return; }
   if(e.ctrlKey&&e.key==='a'){ e.preventDefault(); elements.forEach(el=>selectedIds.add(el.id)); drawSelBox(); return; }
   if(e.ctrlKey&&e.key==='d'){ e.preventDefault(); duplicateSelected(); return; }
   if(e.key==='Escape'){ 
@@ -2330,6 +2403,7 @@ function exportPNG(scaleOverride){
 setForceSide('friendly');
 setTool('select');
 updateTransform();
+updateUndoRedoButtons();
 </script>
 </body>
 </html>
