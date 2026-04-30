@@ -20,7 +20,7 @@
   --text-dim: #7070a0;
   --shadow: 0 14px 40px rgba(0,0,0,.32);
 }
-*{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
 .app{display:flex;height:100vh}
 
@@ -103,16 +103,24 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <body>
 <div class="app">
 <div class="sidebar">
-  <div class="sidebar-header">⚔ КОНСТРУКТОР ОПЕРАЦИЙ</div>
+  <div class="sidebar-header">
+    <button id="fileMenuBtn" class="act-btn" style="width:auto;padding:4px 8px;border-radius:4px;margin-right:8px;" onclick="toggleFileMenu()">📁 Файл</button>
+    <span>⚔ КОНСТРУКТОР ОПЕРАЦИЙ</span>
+  </div>
+  
+  <!-- Выпадающее меню Файл -->
+  <div id="fileMenu" style="display:none;position:absolute;top:42px;left:10px;background:rgba(23,23,42,.98);border:1px solid var(--border);border-radius:6px;padding:4px;z-index:100;box-shadow:var(--shadow);min-width:200px;">
+    <button class="act-btn" onclick="document.getElementById('fileInput').click();toggleFileMenu();" style="border-radius:4px;"><span class="icon">📁</span> Загрузить изображение</button>
+    <button class="act-btn" onclick="pasteFromClipboard();toggleFileMenu();" style="border-radius:4px;"><span class="icon">📋</span> Вставить из буфера</button>
+    <div class="divider" style="margin:4px 0;"></div>
+    <button class="act-btn" onclick="saveProject();toggleFileMenu();" style="border-radius:4px;"><span class="icon">💾</span> Сохранить проект</button>
+    <button class="act-btn" onclick="document.getElementById('projectInput').click();toggleFileMenu();" style="border-radius:4px;"><span class="icon">📂</span> Загрузить проект</button>
+    <div class="divider" style="margin:4px 0;"></div>
+    <button class="act-btn" onclick="showExportDialog();toggleFileMenu();" style="border-radius:4px;"><span class="icon">💾</span> Экспорт PNG</button>
+    <button class="act-btn" onclick="exportSVG();toggleFileMenu();" style="border-radius:4px;"><span class="icon">▣</span> Экспорт SVG</button>
+  </div>
+  
   <div class="sidebar-scroll">
-
-    <div class="sec-title">Карта</div>
-    <button class="act-btn" onclick="document.getElementById('fileInput').click()"><span class="icon">📁</span> Загрузить изображение</button>
-    <button class="act-btn" onclick="pasteFromClipboard()"><span class="icon">📋</span> Вставить из буфера</button>
-    <div class="divider"></div>
-    <button class="act-btn" onclick="saveProject()"><span class="icon">💾</span> Сохранить проект</button>
-    <button class="act-btn" onclick="document.getElementById('projectInput').click()"><span class="icon">📂</span> Загрузить проект</button>
-    <input type="file" id="projectInput" accept=".json,.txt" style="display:none" onchange="loadProject(this)">
 
     <div class="sec-title">Инструменты</div>
     <button class="act-btn tool-btn" data-tool="marker"          onclick="setTool('marker')"><span class="icon">🖍</span> Маркер</button>
@@ -125,38 +133,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <button class="act-btn tool-btn" data-tool="measure"         onclick="setTool('measure')"><span class="icon">↔</span> Линейка</button>
     <button class="act-btn tool-btn" data-tool="text"            onclick="setTool('text')"><span class="icon">T</span> Текстовая метка</button>
     <button class="act-btn tool-btn" data-tool="point"           onclick="setTool('point')"><span class="icon">●</span> Точка</button>
-
-    <div class="sec-title">Инженерные</div>
-    <button class="act-btn tool-btn" data-tool="mine"   onclick="setTool('mine')"><span class="icon">💣</span> Минное поле</button>
-    <button class="act-btn tool-btn" data-tool="trench" onclick="setTool('trench')"><span class="icon">〰</span> Траншея</button>
-
-    <div class="sec-title">Сухопутные (NATO)</div>
-    <div class="sym-grid">
-      <button class="sym-btn" data-symbol="tank"         onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="6" y1="8" x2="26" y2="8" stroke="#e04040" stroke-width="1"/><line x1="6" y1="16" x2="26" y2="16" stroke="#e04040" stroke-width="1"/><rect x="12" y="4" width="8" height="4" fill="none" stroke="#e04040" stroke-width="1" rx="1"/></svg>Tank</button>
-      <button class="sym-btn" data-symbol="armour"       onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="8" y1="6" x2="24" y2="18" stroke="#e04040" stroke-width="1.2"/><line x1="24" y1="6" x2="8" y2="18" stroke="#e04040" stroke-width="1.2"/></svg>Armour</button>
-      <button class="sym-btn" data-symbol="infantry"     onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="10" y1="6" x2="22" y2="18" stroke="#e04040" stroke-width="1.2"/><line x1="22" y1="6" x2="10" y2="18" stroke="#e04040" stroke-width="1.2"/></svg>Infantry</button>
-      <button class="sym-btn" data-symbol="motorized"    onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><circle cx="16" cy="12" r="6" fill="none" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="2" fill="#e04040"/></svg>Motor.</button>
-      <button class="sym-btn" data-symbol="mech_inf"     onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="10" y1="6" x2="22" y2="18" stroke="#e04040" stroke-width="1.2"/><line x1="22" y1="6" x2="10" y2="18" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="3" fill="none" stroke="#e04040" stroke-width="1"/></svg>Mech Inf</button>
-      <button class="sym-btn" data-symbol="arty"         onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="3" y1="12" x2="29" y2="12" stroke="#e04040" stroke-width="1.2"/></svg>Arty</button>
-      <button class="sym-btn" data-symbol="missile"      onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="3" y1="12" x2="29" y2="12" stroke="#e04040" stroke-width="1.2"/><line x1="16" y1="3" x2="16" y2="21" stroke="#e04040" stroke-width="1.2"/></svg>Missile</button>
-      <button class="sym-btn" data-symbol="hq"           onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="4" y1="4" x2="4" y2="20" stroke="#e04040" stroke-width="1"/><line x1="4" y1="4" x2="16" y2="4" stroke="#e04040" stroke-width="1"/><line x1="16" y1="4" x2="16" y2="10" stroke="#e04040" stroke-width="1"/></svg>HQ</button>
-      <button class="sym-btn" data-symbol="recon"        onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><circle cx="16" cy="12" r="6" fill="none" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="2" fill="#e04040"/></svg>Recon</button>
-      <button class="sym-btn" data-symbol="atgm"         onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="8" y1="12" x2="24" y2="12" stroke="#e04040" stroke-width="1.5"/><polygon points="24,9 29,12 24,15" fill="#e04040"/></svg>ATGM</button>
-      <button class="sym-btn" data-symbol="sam"          onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="16" y1="6" x2="16" y2="18" stroke="#e04040" stroke-width="1.5"/><line x1="10" y1="12" x2="22" y2="12" stroke="#e04040" stroke-width="1.5"/></svg>SAM</button>
-      <button class="sym-btn" data-symbol="engineer"     onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="8" y1="8" x2="16" y2="16" stroke="#e04040" stroke-width="1.5"/><line x1="16" y1="8" x2="24" y2="16" stroke="#e04040" stroke-width="1.5"/><line x1="16" y1="16" x2="16" y2="20" stroke="#e04040" stroke-width="1.5"/></svg>Engineer</button>
-      <button class="sym-btn" data-symbol="medical"      onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="16" y1="6" x2="16" y2="18" stroke="#e04040" stroke-width="2"/><line x1="10" y1="12" x2="22" y2="12" stroke="#e04040" stroke-width="2"/></svg>Medical</button>
-      <button class="sym-btn" data-symbol="mortar"       onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="16" y1="3" x2="16" y2="21" stroke="#e04040" stroke-width="1.5"/><line x1="12" y1="12" x2="20" y2="12" stroke="#e04040" stroke-width="1.5"/></svg>Mortar</button>
-      <button class="sym-btn" data-symbol="support"      onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><circle cx="16" cy="12" r="5" fill="none" stroke="#e04040" stroke-width="1.2"/></svg>Support</button>
-      <button class="sym-btn" data-symbol="maint"        onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><polygon points="16,6 22,12 16,18 10,12" fill="none" stroke="#e04040" stroke-width="1.2"/></svg>Maint</button>
-      <button class="sym-btn" data-symbol="ew"           onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><path d="M8 12 Q10 6 12 12 Q14 18 16 12 Q18 6 20 12 Q22 18 24 12" fill="none" stroke="#e04040" stroke-width="1.2"/></svg>EW</button>
-      <button class="sym-btn" data-symbol="uav"          onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><polygon points="16,3 26,12 16,21 6,12" fill="none" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="3" fill="#e04040"/></svg>UAV</button>
-    </div>
-
-    <div class="sec-title">Прочее</div>
-    <div class="sym-grid">
-      <button class="sym-btn" data-symbol="contam"       onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="#ffd966" stroke="#e04040" stroke-width="1.2" opacity=".5"/><text x="16" y="15" text-anchor="middle" font-size="10" fill="#e04040" font-weight="bold">G</text></svg>Contam</button>
-      <button class="sym-btn" data-symbol="installation" onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="4" y="4" width="24" height="16" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="4" y1="12" x2="28" y2="12" stroke="#e04040" stroke-width="1"/><line x1="16" y1="4" x2="16" y2="20" stroke="#e04040" stroke-width="1"/></svg>Install</button>
-    </div>
 
     <div class="sec-title">Цвет</div>
     <div class="color-row">
@@ -171,19 +147,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 
   <div class="sidebar-footer">
-    <div class="export-row">
-      <span>Качество PNG</span>
-      <select id="exportScale">
-        <option value="1">1x</option>
-        <option value="2" selected>2x</option>
-        <option value="3">3x</option>
-        <option value="4">4x</option>
-      </select>
-    </div>
-    <button class="act-btn" onclick="undoAction()"><span class="icon">↩</span> Отменить (Ctrl+Z)</button>
+    <button class="act-btn" onclick="undoAction()" id="undoBtn"><span class="icon">↩</span> Отменить (Ctrl+Z)</button>
+    <button class="act-btn" onclick="redoAction()" id="redoBtn" style="opacity:0.5; pointer-events:none;"><span class="icon">↪</span> Вперед (Ctrl+Y)</button>
     <button class="act-btn" onclick="clearAll()"><span class="icon">🗑</span> Очистить всё</button>
-    <button class="act-btn" onclick="exportPNG()"><span class="icon">💾</span> Экспорт PNG</button>
-    <button class="act-btn" onclick="exportSVG()"><span class="icon">▣</span> Экспорт SVG</button>
   </div>
 </div>
 
@@ -296,6 +262,81 @@ function showToast(text,type){
   toastEl.className='toast visible'+(type?' '+type:'');
   toastTimer=setTimeout(()=>{ toastEl.className='toast'; },2600);
 }
+
+// Toggle file menu
+function toggleFileMenu(){
+  const menu = document.getElementById('fileMenu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Close file menu when clicking outside
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('fileMenu');
+  const btn = document.getElementById('fileMenuBtn');
+  if(menu && !menu.contains(e.target) && e.target !== btn){
+    menu.style.display = 'none';
+  }
+});
+
+// Export dialog
+let exportDialog = null;
+function showExportDialog(){
+  if(exportDialog){
+    exportDialog.style.display = 'block';
+    return;
+  }
+  exportDialog = document.createElement('div');
+  exportDialog.id = 'exportDialog';
+  exportDialog.style.cssText = `
+    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    background:rgba(23,23,42,.98);border:1px solid var(--border);
+    border-radius:8px;padding:16px;z-index:1000;box-shadow:var(--shadow);
+    min-width:240px;backdrop-filter:blur(8px);
+  `;
+  
+  const title = document.createElement('div');
+  title.textContent = 'Экспорт PNG';
+  title.style.cssText = 'font-size:12px;color:var(--accent);margin-bottom:12px;font-weight:700;';
+  exportDialog.appendChild(title);
+  
+  const qualityLabel = document.createElement('div');
+  qualityLabel.textContent = 'Выберите качество:';
+  qualityLabel.style.cssText = 'font-size:11px;color:var(--text-dim);margin-bottom:8px;';
+  exportDialog.appendChild(qualityLabel);
+  
+  const qualityRow = document.createElement('div');
+  qualityRow.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px;';
+  
+  [1, 2, 3, 4].forEach(scale => {
+    const btn = document.createElement('button');
+    btn.textContent = scale + 'x';
+    btn.style.cssText = `
+      background:rgba(255,255,255,.07);border:1px solid var(--border);
+      color:var(--text);padding:8px;border-radius:5px;font-size:11px;
+      cursor:pointer;transition:.12s;
+    `;
+    btn.onmouseover = () => btn.style.background = 'var(--accent-dim)';
+    btn.onmouseout = () => btn.style.background = 'rgba(255,255,255,.07)';
+    btn.onclick = () => {
+      exportPNG(scale);
+      exportDialog.style.display = 'none';
+    };
+    qualityRow.appendChild(btn);
+  });
+  exportDialog.appendChild(qualityRow);
+  
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Отмена';
+  cancelBtn.style.cssText = `
+    width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);
+    color:var(--text);padding:8px;border-radius:5px;font-size:11px;cursor:pointer;
+  `;
+  cancelBtn.onclick = () => exportDialog.style.display = 'none';
+  exportDialog.appendChild(cancelBtn);
+  
+  document.body.appendChild(exportDialog);
+}
+
 function downloadBlob(blob,filename){
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -319,6 +360,23 @@ function smoothPath(pts){
     d+=`C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
   }
   return d;
+}
+
+// Catmull-Rom → Bezier (замкнутый путь для зон/районов)
+function smoothPathClosed(pts){
+  if(!pts||pts.length<2) return '';
+  if(pts.length===2) return `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}L${pts[1].x.toFixed(1)},${pts[1].y.toFixed(1)}Z`;
+  // Дублируем точки для замыкания
+  const ext=[pts[pts.length-1],...pts,pts[0],pts[1]];
+  let d='';
+  for(let i=1;i<pts.length+1;i++){
+    const p0=ext[i-1],p1=ext[i],p2=ext[i+1],p3=ext[i+2];
+    const cp1x=p1.x+(p2.x-p0.x)/6, cp1y=p1.y+(p2.y-p0.y)/6;
+    const cp2x=p2.x-(p3.x-p1.x)/6, cp2y=p2.y-(p3.y-p1.y)/6;
+    if(i===1) d+=`M${p1.x.toFixed(1)},${p1.y.toFixed(1)}`;
+    d+=`C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+  }
+  return d+'Z';
 }
 
 // Ramer-Douglas-Peucker
@@ -353,6 +411,7 @@ const AppState = {
   elements: [],
   selectedIds: new Set(),
   history: [],
+  redoStack: [],
   nextId: 1,
   panX: 0,
   panY: 0,
@@ -379,7 +438,7 @@ const zoomResponsiveTypes = new Set(['flex-arrow','flex-arrow-dash','mine','tren
 
 // State accessors for backward compatibility
 let currentTool = 'select', currentSymbol = null, activeForce = 'friendly';
-let elements = [], selectedIds = new Set(), history = [], nextId = 1;
+let elements = [], selectedIds = new Set(), history = [], redoStack = [], nextId = 1;
 let panX = 0, panY = 0, zoom = 1;
 let isPanning = false, panStartX = 0, panStartY = 0;
 let isDrawing = false, drawPts = [], lastAddedPt = null;
@@ -397,6 +456,7 @@ function syncState() {
   elements = AppState.elements;
   selectedIds = AppState.selectedIds;
   history = AppState.history;
+  redoStack = AppState.redoStack || [];
   nextId = AppState.nextId;
   panX = AppState.panX;
   panY = AppState.panY;
@@ -426,6 +486,7 @@ function updateAppState() {
   AppState.elements = elements;
   AppState.selectedIds = selectedIds;
   AppState.history = history;
+  AppState.redoStack = redoStack;
   AppState.nextId = nextId;
   AppState.panX = panX;
   AppState.panY = panY;
@@ -720,7 +781,7 @@ function previewWideArrow(pts, color) {
     ln.setAttribute('x1', x1.toFixed(1)); ln.setAttribute('y1', y1.toFixed(1));
     ln.setAttribute('x2', x2.toFixed(1)); ln.setAttribute('y2', y2.toFixed(1));
     ln.setAttribute('stroke', color);
-    ln.setAttribute('stroke-width', 1.5 / zoom);
+    ln.setAttribute('stroke-width', Math.max(1.5, 1.5));
     ln.setAttribute('stroke-opacity', '0.45');
     ln.style.pointerEvents = 'none';
     hatchG.appendChild(ln);
@@ -739,7 +800,7 @@ function previewWideArrow(pts, color) {
   outline.setAttribute('d', shape.d);
   outline.setAttribute('fill', 'none');
   outline.setAttribute('stroke', color);
-  outline.setAttribute('stroke-width', 2.5 / zoom);
+  outline.setAttribute('stroke-width', Math.max(2.5, 2.5));
   outline.setAttribute('stroke-linejoin', 'round');
   g.appendChild(outline);
   previewGrp.appendChild(g);
@@ -769,7 +830,7 @@ function updateTransform(){
 function zoomBy(f){
   const r=canvasArea.getBoundingClientRect();
   panX=(r.width/2)-(r.width/2-panX)*f; panY=(r.height/2)-(r.height/2-panY)*f;
-  zoom=clamp(zoom*f,0.04,24); updateTransform();
+  zoom=clamp(zoom*f,0.04,23); updateTransform();
   if(currentTool==='symbol') refreshSymPreviewPos();
 }
 function zoomReset(){ zoom=1; panX=0; panY=0; updateTransform(); }
@@ -883,7 +944,7 @@ function showImageBorder(){
   b.setAttribute('x',im.cx-im.w/2); b.setAttribute('y',im.cy-im.h/2);
   b.setAttribute('width',im.w); b.setAttribute('height',im.h);
   b.setAttribute('fill','none'); b.setAttribute('stroke','var(--accent)');
-  b.setAttribute('stroke-width',1/zoom); b.setAttribute('stroke-dasharray',`${5/zoom},${3/zoom}`);
+  b.setAttribute('stroke-width', Math.max(1, 1)); b.setAttribute('stroke-dasharray',`${Math.max(5, 5)},${Math.max(3, 3)}`);
   b.setAttribute('pointer-events','none'); b.id='imgBorder';
   imgGrp.appendChild(b);
   [{x:im.cx-im.w/2,y:im.cy-im.h/2},{x:im.cx+im.w/2,y:im.cy-im.h/2},
@@ -961,6 +1022,8 @@ function serializeProject(){
 
 function saveProject(){
   const project=serializeProject();
+  // Save redoStack as well
+  project.redoStack = redoStack;
   const blob=new Blob([JSON.stringify(project,null,2)],{type:'application/json;charset=utf-8'});
   downloadBlob(blob,`combat_plan_${safeStamp()}.json`);
   showToast(`Проект сохранен: ${project.elements.length} элементов, ${project.images.length} карт`,'success');
@@ -1051,11 +1114,12 @@ function applyProject(project){
     dragState = null; 
     resizeState = null; 
     history = [];
+    redoStack = [];
 
     const s = project.settings || {};
     panX = finiteNumber(s.panX, 0); 
     panY = finiteNumber(s.panY, 0); 
-    zoom = clamp(finiteNumber(s.zoom, 1), 0.04, 24);
+    zoom = clamp(finiteNumber(s.zoom, 1), 0.04,23);
     
     if(s.colorFriendly) document.getElementById('colorFriendly').value = s.colorFriendly;
     if(s.colorEnemy) document.getElementById('colorEnemy').value = s.colorEnemy;
@@ -1077,10 +1141,16 @@ function applyProject(project){
     nextId = Math.max(Number(project.nextId || 1), maxElId + 1);
     imgNextId = Math.max(Number(project.imgNextId || 1), maxImgId + 1);
     
+    // Load redoStack if present
+    if(Array.isArray(project.redoStack)){
+      redoStack = project.redoStack;
+    }
+    
     setForceSide(activeForce);
     setTool('select');
     lastDecorZoom = null;
     updateTransform();
+    updateUndoRedoButtons();
     
     showToast(`Проект загружен: ${elements.length} элементов, ${images.length} карт`, 'success');
   } catch(err) {
@@ -1142,11 +1212,18 @@ function buildLine(start,end,color){
 }
 function buildArea(pts,color){
   const g=NS('g'); g.dataset.label='';
-  const poly=NS('polygon'); poly.setAttribute('points',pts.map(p=>`${p.x},${p.y}`).join(' '));
-  poly.setAttribute('fill',color); poly.setAttribute('fill-opacity','.15');
-  poly.setAttribute('stroke',color); poly.setAttribute('stroke-width',2);
-  poly.setAttribute('vector-effect','non-scaling-stroke'); poly.style.cursor='move';
-  g.appendChild(poly); return g;
+  // Создаем сглаженный путь для более плавных границ
+  const d=smoothPathClosed(pts);
+  const path=NS('path'); 
+  path.setAttribute('d',d);
+  path.setAttribute('fill',color); 
+  path.setAttribute('fill-opacity','.15');
+  path.setAttribute('stroke',color); 
+  path.setAttribute('stroke-width',2);
+  path.setAttribute('vector-effect','non-scaling-stroke'); 
+  path.style.cursor='move';
+  g.appendChild(path); 
+  return g;
 }
 function buildPoint(pt,color){
   const g=NS('g'); g.dataset.label='';
@@ -1178,7 +1255,7 @@ function buildMineField(pts,color){
     while(ac-lc>=sp){ const t=clamp((lc+sp-(ac-sl))/sl,0,1);
       const mx=pts[i-1].x+(pts[i].x-pts[i-1].x)*t, my=pts[i-1].y+(pts[i].y-pts[i-1].y)*t;
       const c=NS('circle'); c.setAttribute('cx',mx); c.setAttribute('cy',my);
-      c.setAttribute('r',4/zoom); c.setAttribute('fill','none'); c.setAttribute('stroke',color);
+      c.setAttribute('r', Math.max(4, 4)); c.setAttribute('fill','none'); c.setAttribute('stroke',color);
       c.setAttribute('stroke-width',1); c.setAttribute('vector-effect','non-scaling-stroke');
       c.style.pointerEvents='none'; g.appendChild(c); lc+=sp; } }
   return g;
@@ -1228,7 +1305,7 @@ function makeSvgBadge(text,x,y,unit,color,cls){
   g.setAttribute('transform',`translate(${x},${y})`); g.setAttribute('pointer-events','none');
   const bg=NS('rect'); bg.setAttribute('x',-w/2); bg.setAttribute('y',-h/2); bg.setAttribute('width',w); bg.setAttribute('height',h);
   bg.setAttribute('rx',4*unit); bg.setAttribute('fill','#10101d'); bg.setAttribute('fill-opacity','.9');
-  bg.setAttribute('stroke',color||'#f0c040'); bg.setAttribute('stroke-width',1*unit); bg.setAttribute('stroke-opacity','.55');
+  bg.setAttribute('stroke',color||'#f0c040'); bg.setAttribute('stroke-width', Math.max(1, 1*unit)); bg.setAttribute('stroke-opacity','.55');
   const t=NS('text'); t.setAttribute('x',0); t.setAttribute('y',4.2*unit); t.setAttribute('fill','#f4d35e');
   t.setAttribute('font-size',font); t.setAttribute('font-family','Segoe UI, Arial, sans-serif'); t.setAttribute('font-weight','700'); t.setAttribute('text-anchor','middle'); t.textContent=text;
   g.appendChild(bg); g.appendChild(t); return g;
@@ -1429,7 +1506,7 @@ function drawSelBox(){
   box.setAttribute('x',x1-pad); box.setAttribute('y',y1-pad);
   box.setAttribute('width',x2-x1+pad*2); box.setAttribute('height',y2-y1+pad*2);
   box.setAttribute('fill','rgba(240,192,64,.07)'); box.setAttribute('stroke','#f0c040');
-  box.setAttribute('stroke-width',1.5/zoom); box.setAttribute('stroke-dasharray',`${5/zoom},${3/zoom}`);
+  box.setAttribute('stroke-width', Math.max(1.5, 1.5)); box.setAttribute('stroke-dasharray',`${Math.max(5, 5)},${Math.max(3, 3)}`);
   box.setAttribute('pointer-events','none'); selGrp.appendChild(box);
   if(selectedIds.size===1){
     const el=elements.find(e=>e.id===Array.from(selectedIds)[0]);
@@ -1447,23 +1524,55 @@ function selectInRect(r){ elements.forEach(el=>{ const bb=getElBBox(el); if(bb.x
 
 // ─── DRAG & RESIZE ───────────────────────────────────────────────────────
 function applyDrag(ds,dx,dy){
-  const d=ds.elData.data;
-  if(ds.elData.type==='symbol'){
-    d.x=ds.orig.x+dx; d.y=ds.orig.y+dy;
-    ds.elData.el.setAttribute('transform',`translate(${d.x},${d.y}) scale(${(d.scale||1)/zoom})`);
-  } else if(ds.elData.type==='text'){
-    d.x=ds.orig.x+dx; d.y=ds.orig.y+dy;
-    ds.elData.el.setAttribute('transform',`translate(${d.x},${d.y})`);
-  } else if(ds.elData.type==='line'||ds.elData.type==='measure'){
-    d.start={x:ds.orig.start.x+dx,y:ds.orig.start.y+dy};
-    d.end={x:ds.orig.end.x+dx,y:ds.orig.end.y+dy};
-    rebuildEl(ds.elData);
-  } else if(d.points){
-    d.points=ds.orig.points.map(p=>({x:p.x+dx,y:p.y+dy}));
-    rebuildEl(ds.elData);
+  // Перемещаем все выбранные элементы как один
+  if(ds.ids && ds.origPositions){
+    // Множественное выделение - перемещаем все элементы
+    ds.ids.forEach(id=>{
+      const el=elements.find(e=>e.id===id);
+      if(!el) return;
+      const orig=ds.origPositions.get(id);
+      if(!orig) return;
+      const d=el.data;
+      if(el.type==='symbol'){
+        d.x=(orig.x||0)+dx; d.y=(orig.y||0)+dy;
+        el.el.setAttribute('transform',`translate(${d.x},${d.y}) scale(${(d.scale||1)/zoom})`);
+      } else if(el.type==='text'){
+        d.x=(orig.x||0)+dx; d.y=(orig.y||0)+dy;
+        el.el.setAttribute('transform',`translate(${d.x},${d.y})`);
+      } else if(el.type==='line'||el.type==='measure'){
+        d.start={x:orig.start.x+dx,y:orig.start.y+dy};
+        d.end={x:orig.end.x+dx,y:orig.end.y+dy};
+        rebuildEl(el);
+      } else if(orig.points){
+        d.points=orig.points.map(p=>({x:p.x+dx,y:p.y+dy}));
+        rebuildEl(el);
+      }
+      if(el.type==='wide-arrow') updateWideArrowMerges();
+      updateLabel(el);
+    });
+  } else {
+    // Одиночное выделение (старый режим для совместимости)
+    const el=ds.elData;
+    if(!el) return;
+    const d=el.data;
+    if(el.type==='symbol'){
+      d.x=(d.x||0)+dx; d.y=(d.y||0)+dy;
+      el.el.setAttribute('transform',`translate(${d.x},${d.y}) scale(${(d.scale||1)/zoom})`);
+    } else if(el.type==='text'){
+      d.x=(d.x||0)+dx; d.y=(d.y||0)+dy;
+      el.el.setAttribute('transform',`translate(${d.x},${d.y})`);
+    } else if(el.type==='line'||el.type==='measure'){
+      d.start={x:d.start.x+dx,y:d.start.y+dy};
+      d.end={x:d.end.x+dx,y:d.end.y+dy};
+      rebuildEl(el);
+    } else if(d.points){
+      d.points=d.points.map(p=>({x:p.x+dx,y:p.y+dy}));
+      rebuildEl(el);
+    }
+    if(el.type==='wide-arrow') updateWideArrowMerges();
+    updateLabel(el);
   }
-  if(ds.elData.type==='wide-arrow') updateWideArrowMerges();
-  updateLabel(ds.elData); if(selectedIds.has(ds.id)) drawSelBox();
+  drawSelBox();
 }
 
 function applyResize(rs,dx,dy){
@@ -1510,7 +1619,7 @@ function updateLabel(elData){
   bg.setAttribute('width',w); bg.setAttribute('height',h);
   bg.setAttribute('rx',4*unit); bg.setAttribute('fill','#10101d');
   bg.setAttribute('fill-opacity','.88'); bg.setAttribute('stroke','#f0c040');
-  bg.setAttribute('stroke-width',1.1*unit); bg.setAttribute('stroke-opacity','.45');
+  bg.setAttribute('stroke-width', Math.max(1.1, 1.1*unit)); bg.setAttribute('stroke-opacity','.45');
   const t=NS('text');
   t.setAttribute('x',0); t.setAttribute('y',4.2*unit);
   t.setAttribute('fill','#f4d35e'); t.setAttribute('font-size',font);
@@ -1529,11 +1638,32 @@ function saveHistory(){
     imgNextId
   });
   if(history.length>60) history.shift();
+  redoStack = []; // Clear redo stack on new action
+  updateUndoRedoButtons();
+}
+
+function updateUndoRedoButtons(){
+  const undoBtn = document.getElementById('undoBtn');
+  const redoBtn = document.getElementById('redoBtn');
+  if(undoBtn) {
+    undoBtn.style.opacity = history.length ? '1' : '0.5';
+    undoBtn.style.pointerEvents = history.length ? 'auto' : 'none';
+  }
+  if(redoBtn) {
+    redoBtn.style.opacity = redoStack.length ? '1' : '0.5';
+    redoBtn.style.pointerEvents = redoStack.length ? 'auto' : 'none';
+  }
 }
 
 function undoAction(){
   if(!history.length) return;
   const snap = history.pop(); 
+  redoStack.push({
+    elements: elements.map(el=>({id:el.id,type:el.type,data:cloneData(el.data),label:el.el.dataset.label||''})),
+    images: images.map(im=>({id:im.id,dataUrl:im.dataUrl,cx:im.cx,cy:im.cy,w:im.w,h:im.h,origW:im.origW,origH:im.origH})),
+    nextId,
+    imgNextId
+  });
   // Clear DOM properly
   while(elemGroup.firstChild) elemGroup.removeChild(elemGroup.firstChild);
   while(imgGrp.firstChild) imgGrp.removeChild(imgGrp.firstChild);
@@ -1558,7 +1688,45 @@ function undoAction(){
   lastDecorZoom = null;
   updateImageInteractivity(); 
   updateTransform();
+  updateUndoRedoButtons();
   showToast('Действие отменено', 'success');
+}
+
+function redoAction(){
+  if(!redoStack.length) return;
+  const snap = redoStack.pop();
+  history.push({
+    elements: elements.map(el=>({id:el.id,type:el.type,data:cloneData(el.data),label:el.el.dataset.label||''})),
+    images: images.map(im=>({id:im.id,dataUrl:im.dataUrl,cx:im.cx,cy:im.cy,w:im.w,h:im.h,origW:im.origW,origH:im.origH})),
+    nextId,
+    imgNextId
+  });
+  // Clear DOM properly
+  while(elemGroup.firstChild) elemGroup.removeChild(elemGroup.firstChild);
+  while(imgGrp.firstChild) imgGrp.removeChild(imgGrp.firstChild);
+  elements = []; 
+  images = [];
+  // Clear wide arrow masks to prevent memory leaks
+  clearWideArrowMasks();
+  
+  const snapElements = Array.isArray(snap) ? snap : (snap.elements || []);
+  snapElements.forEach(s => { 
+    const data = cloneData(s.data || {}), 
+    el = spawnEl({...s, data}); 
+    elements.push({id: s.id, type: s.type, data, el}); 
+  });
+  if(!Array.isArray(snap) && (snap.images || []).length){
+    (snap.images || []).forEach(restoreImage);
+  }
+  nextId = (!Array.isArray(snap) && snap.nextId) || (elements.length ? Math.max(...elements.map(e => e.id)) + 1 : 1);
+  imgNextId = (!Array.isArray(snap) && snap.imgNextId) || (images.length ? Math.max(...images.map(i => i.id)) + 1 : 1);
+  clearSelection(); 
+  deselectImages();
+  lastDecorZoom = null;
+  updateImageInteractivity(); 
+  updateTransform();
+  updateUndoRedoButtons();
+  showToast('Действие возвращено', 'success');
 }
 
 function spawnEl(s){
@@ -1650,6 +1818,8 @@ function setTool(tool,symBtn){
   updateImageInteractivity();
   updateStatus();
   isDrawing=false; drawPts=[];
+  // Скрываем меню меток при смене инструмента
+  hideLabelMenu();
 }
 
 // ─── EVENTS ─────────────────────────────────────────────────────────────
@@ -1662,7 +1832,31 @@ window.addEventListener('mouseup', onMouseUp);
 svg.addEventListener('dblclick',  onDblClick);
 canvasArea.addEventListener('wheel', onWheel, {passive:false});
 document.addEventListener('keydown', onKeyDown);
-svg.addEventListener('contextmenu', e=>e.preventDefault());
+svg.addEventListener('contextmenu', e=>{ e.preventDefault(); onContextMenu(e); });
+
+function onContextMenu(e){
+  const p=getSvgPt(e);
+  const target=e.target.closest('[data-eid]');
+  if(target){
+    const id=parseInt(target.dataset.eid);
+    // Если элемент уже выбран и зажаты Ctrl/Meta - снимаем выделение
+    if((e.ctrlKey||e.metaKey)&&selectedIds.has(id)){
+      selectedIds.delete(id);
+      drawSelBox();
+      return;
+    }
+    // Если элемент не выбран - выбираем его
+    if(!selectedIds.has(id)){
+      if(!e.ctrlKey&&!e.metaKey) selectedIds.clear();
+      selectedIds.add(id);
+      deselectImages(); drawSelBox();
+    }
+    // Автоматически переключаемся в режим select при выборе элемента
+    if(currentTool!=='select'){
+      setTool('select');
+    }
+  }
+}
 
 function onMouseDown(e){
   if(e.button===1||currentTool==='pan'){
@@ -1699,8 +1893,19 @@ function onMouseDown(e){
       if(e.ctrlKey||e.metaKey){ if(selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id); }
       else selectedIds.add(id);
       deselectImages(); drawSelBox();
-      const elData=elements.find(el=>el.id===id);
-      if(elData){ saveHistory(); dragState={id,elData,orig:JSON.parse(JSON.stringify(elData.data)),startX:p.x,startY:p.y}; }
+      // Сохраняем начальные позиции всех выбранных элементов и координаты мыши
+      if(selectedIds.size>0){
+        saveHistory();
+        dragState={
+          ids:Array.from(selectedIds),
+          startX:p.x,
+          startY:p.y,
+          origPositions:new Map(selectedIds.map(sid=>{
+            const el=elements.find(e=>e.id===sid);
+            return [sid, el?JSON.parse(JSON.stringify(el.data)):null];
+          }))
+        };
+      }
       return;
     }
     if(!e.ctrlKey&&!e.metaKey){ clearSelection(); deselectImages(); }
@@ -1786,6 +1991,9 @@ function onMouseUp(e){
     rubberState=null; clearPreview(); return;
   }
 
+  // Если меню меток открыто, не обрабатываем mouseup для рисования
+  if(labelMenu && labelMenu.style.display === 'block') return;
+
   if(!isDrawing) return;
   isDrawing=false; clearPreview();
   if(drawPts.length<2) return;
@@ -1843,31 +2051,181 @@ function drawRubberBand(sx,sy,ex,ey){
   previewGrp.appendChild(rect);
 }
 
+// ─── DOUBLE CLICK FOR LABELS ─────────────────────────────────────────────
+let labelMenu = null;
+
+// Определение всех доступных символов с их SVG
+const symbolDefinitions = {
+  'tank': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="6" y1="8" x2="26" y2="8" stroke="#e04040" stroke-width="1"/><line x1="6" y1="16" x2="26" y2="16" stroke="#e04040" stroke-width="1"/><rect x="12" y="4" width="8" height="4" fill="none" stroke="#e04040" stroke-width="1" rx="1"/></svg>',
+  'armour': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="8" y1="6" x2="24" y2="18" stroke="#e04040" stroke-width="1.2"/><line x1="24" y1="6" x2="8" y2="18" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'infantry': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="10" y1="6" x2="22" y2="18" stroke="#e04040" stroke-width="1.2"/><line x1="22" y1="6" x2="10" y2="18" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'motorized': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><circle cx="16" cy="12" r="6" fill="none" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="2" fill="#e04040"/></svg>',
+  'mech_inf': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="10" y1="6" x2="22" y2="18" stroke="#e04040" stroke-width="1.2"/><line x1="22" y1="6" x2="10" y2="18" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="3" fill="none" stroke="#e04040" stroke-width="1"/></svg>',
+  'arty': '<svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="3" y1="12" x2="29" y2="12" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'missile': '<svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="3" y1="12" x2="29" y2="12" stroke="#e04040" stroke-width="1.2"/><line x1="16" y1="3" x2="16" y2="21" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'hq': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="4" y1="4" x2="4" y2="20" stroke="#e04040" stroke-width="1"/><line x1="4" y1="4" x2="16" y2="4" stroke="#e04040" stroke-width="1"/><line x1="16" y1="4" x2="16" y2="10" stroke="#e04040" stroke-width="1"/></svg>',
+  'recon': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><circle cx="16" cy="12" r="6" fill="none" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="2" fill="#e04040"/></svg>',
+  'atgm': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="8" y1="12" x2="24" y2="12" stroke="#e04040" stroke-width="1.5"/><polygon points="24,9 29,12 24,15" fill="#e04040"/></svg>',
+  'sam': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="16" y1="6" x2="16" y2="18" stroke="#e04040" stroke-width="1.5"/><line x1="10" y1="12" x2="22" y2="12" stroke="#e04040" stroke-width="1.5"/></svg>',
+  'engineer': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="8" y1="8" x2="16" y2="16" stroke="#e04040" stroke-width="1.5"/><line x1="16" y1="8" x2="24" y2="16" stroke="#e04040" stroke-width="1.5"/><line x1="16" y1="16" x2="16" y2="20" stroke="#e04040" stroke-width="1.5"/></svg>',
+  'medical': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="16" y1="6" x2="16" y2="18" stroke="#e04040" stroke-width="2"/><line x1="10" y1="12" x2="22" y2="12" stroke="#e04040" stroke-width="2"/></svg>',
+  'mortar': '<svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="16" y1="3" x2="16" y2="21" stroke="#e04040" stroke-width="1.5"/><line x1="12" y1="12" x2="20" y2="12" stroke="#e04040" stroke-width="1.5"/></svg>',
+  'support': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><circle cx="16" cy="12" r="5" fill="none" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'maint': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><polygon points="16,6 22,12 16,18 10,12" fill="none" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'ew': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><path d="M8 12 Q10 6 12 12 Q14 18 16 12 Q18 6 20 12 Q22 18 24 12" fill="none" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'uav': '<svg viewBox="0 0 32 24"><polygon points="16,3 26,12 16,21 6,12" fill="none" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="3" fill="#e04040"/></svg>',
+  'contam': '<svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="#ffd966" stroke="#e04040" stroke-width="1.2" opacity=".5"/><text x="16" y="15" text-anchor="middle" font-size="10" fill="#e04040" font-weight="bold">G</text></svg>',
+  'installation': '<svg viewBox="0 0 32 24"><rect x="4" y="4" width="24" height="16" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="4" y1="12" x2="28" y2="12" stroke="#e04040" stroke-width="1"/><line x1="16" y1="4" x2="16" y2="20" stroke="#e04040" stroke-width="1"/></svg>',
+  'mine': '<svg viewBox="0 0 32 24"><path d="M4 12 L28 12 M8 4 L8 20 M24 4 L24 20" stroke="#e04040" stroke-width="1.5" stroke-dasharray="3,2"/><circle cx="16" cy="12" r="4" fill="none" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'trench': '<svg viewBox="0 0 32 24"><path d="M2 12 Q6 6 10 12 T18 12 T26 12 T30 12" fill="none" stroke="#e04040" stroke-width="1.5"/></svg>'
+};
+
+function createLabelMenu() {
+  if (labelMenu) return;
+  labelMenu = document.createElement('div');
+  labelMenu.id = 'labelMenu';
+  labelMenu.style.cssText = `
+    position:absolute;display:none;z-index:1000;
+    background:rgba(23,23,42,.98);border:1px solid var(--border);
+    border-radius:8px;padding:8px;box-shadow:var(--shadow);
+    min-width:280px;backdrop-filter:blur(8px);
+  `;
+  
+  const title = document.createElement('div');
+  title.textContent = 'Выберите символ';
+  title.style.cssText = 'font-size:11px;color:var(--accent);margin-bottom:6px;font-weight:600;';
+  labelMenu.appendChild(title);
+  
+  // Создаем сетку для иконок символов
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:4px;max-height:320px;overflow-y:auto;padding:2px;';
+  
+  // Добавляем все символы в сетку
+  Object.keys(symbolDefinitions).forEach(symKey => {
+    const btn = document.createElement('button');
+    btn.className = 'sym-btn';
+    btn.style.cssText = 'padding:4px;border-radius:4px;cursor:pointer;background:rgba(255,255,255,.05);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;transition:.12s;';
+    btn.onmouseover = () => btn.style.background = 'var(--accent-dim)';
+    btn.onmouseout = () => btn.style.background = 'rgba(255,255,255,.05)';
+    btn.innerHTML = symbolDefinitions[symKey];
+    btn.onclick = () => placeSymbolAtCursor(symKey);
+    grid.appendChild(btn);
+  });
+  
+  labelMenu.appendChild(grid);
+  
+  const cancelRow = document.createElement('div');
+  cancelRow.style.cssText = 'display:flex;justify-content:flex-end;margin-top:6px;';
+  
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Отмена';
+  cancelBtn.style.cssText = `
+    background:rgba(255,255,255,.07);border:1px solid var(--border);
+    color:var(--text);padding:5px 12px;border-radius:4px;
+    font-size:11px;cursor:pointer;
+  `;
+  cancelBtn.onclick = hideLabelMenu;
+  cancelRow.appendChild(cancelBtn);
+  
+  labelMenu.appendChild(cancelRow);
+  
+  document.body.appendChild(labelMenu);
+}
+
+function showLabelMenu(x, y) {
+  createLabelMenu();
+  labelMenu.style.left = x + 'px';
+  labelMenu.style.top = y + 'px';
+  labelMenu.style.display = 'block';
+  labelMenu.dataset.targetX = x;
+  labelMenu.dataset.targetY = y;
+}
+
+function hideLabelMenu() {
+  if (labelMenu) labelMenu.style.display = 'none';
+}
+
+function placeSymbolAtCursor(symbolType) {
+  if (!labelMenu || labelMenu.style.display === 'none') return;
+  
+  const targetX = parseFloat(labelMenu.dataset.targetX);
+  const targetY = parseFloat(labelMenu.dataset.targetY);
+  const screenX = parseFloat(labelMenu.dataset.screenX || targetX);
+  const screenY = parseFloat(labelMenu.dataset.screenY || targetY);
+  
+  // Преобразуем экранные координаты обратно в мировые
+  const rect = canvasArea.getBoundingClientRect();
+  const worldX = (screenX - rect.left - panX) / zoom;
+  const worldY = (screenY - rect.top - panY) / zoom;
+  
+  saveHistory();
+  const id = nextId++;
+  const color = getColor();
+  const data = { symbol: symbolType, x: worldX, y: worldY, color, scale: 1 };
+  const g = buildSymbol(symbolType, { x: worldX, y: worldY }, color, 1);
+  registerEl(g, id);
+  elemGroup.appendChild(g);
+  elements.push({ id, type: 'symbol', data, el: g });
+  
+  hideLabelMenu();
+  updateStatus();
+  showToast(`Символ добавлен`, 'success');
+}
+
 function onDblClick(e){
-  if(currentTool!=='select'||selectedIds.size!==1) return;
-  const elData=elements.find(el=>el.id===Array.from(selectedIds)[0]); if(!elData) return;
-  const label=prompt('Подпись:',elData.el.dataset.label||'');
-  if(label!==null){ elData.el.dataset.label=label; updateLabel(elData); }
+  const p = getSvgPt(e);
+  
+  // Проверяем, кликнули ли по существующему элементу
+  const target = e.target.closest('[data-eid]');
+  if (target && currentTool === 'select') {
+    // Двойной клик по элементу - редактирование подписи
+    const id = parseInt(target.dataset.eid);
+    const elData = elements.find(el => el.id === id);
+    if (!elData) return;
+    const label = prompt('Подпись:', elData.el.dataset.label || '');
+    if (label !== null) {
+      elData.el.dataset.label = label;
+      updateLabel(elData);
+    }
+    return;
+  }
+  
+  // Двойной клик по пустому месту - создание символа через меню
+  createLabelMenu();
+  labelMenu.dataset.screenX = e.clientX;
+  labelMenu.dataset.screenY = e.clientY;
+  showLabelMenu(e.clientX, e.clientY);
 }
 
 function onWheel(e){
   e.preventDefault();
   const f=e.deltaY<0?1.14:1/1.14, r=canvasArea.getBoundingClientRect();
   panX=(e.clientX-r.left)-(e.clientX-r.left-panX)*f; panY=(e.clientY-r.top)-(e.clientY-r.top-panY)*f;
-  zoom=clamp(zoom*f,0.04,24); updateTransform();
+  zoom=clamp(zoom*f,0.04,23); updateTransform();
   if(currentTool==='symbol') refreshSymPreviewPos();
 }
 
 function onKeyDown(e){
   if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  // Если меню меток открыто, обрабатываем Enter и Escape для него
+  if(labelMenu && labelMenu.style.display === 'block'){
+    if(e.key === 'Enter'){ e.preventDefault(); applyLabelFromMenu(); return; }
+    if(e.key === 'Escape'){ e.preventDefault(); hideLabelMenu(); return; }
+    return;
+  }
   if((e.key==='Delete'||e.key==='Backspace')&&!e.ctrlKey){ e.preventDefault(); deleteSelected(); return; }
   if(e.ctrlKey&&e.key==='z'){ e.preventDefault(); undoAction(); return; }
+  if(e.ctrlKey&&e.key==='y'){ e.preventDefault(); redoAction(); return; }
   if(e.ctrlKey&&e.key==='a'){ e.preventDefault(); elements.forEach(el=>selectedIds.add(el.id)); drawSelBox(); return; }
   if(e.ctrlKey&&e.key==='d'){ e.preventDefault(); duplicateSelected(); return; }
-  if(e.key==='Escape'){ setTool('select'); return; }
+  if(e.key==='Escape'){ 
+    hideLabelMenu();
+    setTool('select'); 
+    return; 
+  }
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)&&selectedIds.size){
     e.preventDefault();
-    const step=(e.shiftKey?10:1)/zoom;
+    const step=(e.shiftKey?20:5)/zoom;
     const dx=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0;
     const dy=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;
     saveHistory();
@@ -2011,8 +2369,8 @@ function exportSVG(){
   showToast('SVG экспортирован','success');
 }
 
-function exportPNG(){
-  const {source,outW,outH,scale,requested}=exportSource(undefined,true);
+function exportPNG(scaleOverride){
+  const {source,outW,outH,scale,requested}=exportSource(scaleOverride,true);
   const url=URL.createObjectURL(new Blob([source],{type:'image/svg+xml;charset=utf-8'}));
   const canvas=document.createElement('canvas'); canvas.width=outW; canvas.height=outH;
   const img=new Image();
@@ -2042,12 +2400,10 @@ function exportPNG(){
     if(currentTool==='symbol'&&currentSymbol){ createSymPreview(); refreshSymPreviewPos(); }
   });
 });
-document.getElementById('exportScale').addEventListener('change',()=>{
-  showToast(`Качество PNG: ${document.getElementById('exportScale').value}x`,'success');
-});
 setForceSide('friendly');
 setTool('select');
 updateTransform();
+updateUndoRedoButtons();
 </script>
 </body>
 </html>
