@@ -1737,11 +1737,17 @@ function onContextMenu(e){
       selectedIds.add(id);
       deselectImages(); drawSelBox();
     }
+    // Автоматически переключаемся в режим select при выборе элемента
+    if(currentTool!=='select'){
+      setTool('select');
+    }
     // Инициализируем перетаскивание для всех выбранных элементов
     if(selectedIds.size>0&&!dragState){
       saveHistory();
       dragState={
         ids:Array.from(selectedIds),
+        startX:p.x,
+        startY:p.y,
         origPositions:new Map(selectedIds.map(sid=>{
           const el=elements.find(e=>e.id===sid);
           return [sid, el?JSON.parse(JSON.stringify(el.data)):null];
@@ -1786,19 +1792,18 @@ function onMouseDown(e){
       if(e.ctrlKey||e.metaKey){ if(selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id); }
       else selectedIds.add(id);
       deselectImages(); drawSelBox();
-      // Сохраняем начальные позиции всех выбранных элементов
+      // Сохраняем начальные позиции всех выбранных элементов и координаты мыши
       if(selectedIds.size>0){
         saveHistory();
-        const elData=elements.find(el=>el.id===id);
-        if(elData){
-          dragState={
-            ids:Array.from(selectedIds),
-            origPositions:new Map(selectedIds.map(sid=>{
-              const el=elements.find(e=>e.id===sid);
-              return [sid, el?JSON.parse(JSON.stringify(el.data)):null];
-            }))
-          };
-        }
+        dragState={
+          ids:Array.from(selectedIds),
+          startX:p.x,
+          startY:p.y,
+          origPositions:new Map(selectedIds.map(sid=>{
+            const el=elements.find(e=>e.id===sid);
+            return [sid, el?JSON.parse(JSON.stringify(el.data)):null];
+          }))
+        };
       }
       return;
     }
