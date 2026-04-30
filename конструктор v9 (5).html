@@ -777,7 +777,7 @@ function previewWideArrow(pts, color) {
     ln.setAttribute('x1', x1.toFixed(1)); ln.setAttribute('y1', y1.toFixed(1));
     ln.setAttribute('x2', x2.toFixed(1)); ln.setAttribute('y2', y2.toFixed(1));
     ln.setAttribute('stroke', color);
-    ln.setAttribute('stroke-width', 1.5 / zoom);
+    ln.setAttribute('stroke-width', Math.max(1.5, 1.5));
     ln.setAttribute('stroke-opacity', '0.45');
     ln.style.pointerEvents = 'none';
     hatchG.appendChild(ln);
@@ -796,7 +796,7 @@ function previewWideArrow(pts, color) {
   outline.setAttribute('d', shape.d);
   outline.setAttribute('fill', 'none');
   outline.setAttribute('stroke', color);
-  outline.setAttribute('stroke-width', 2.5 / zoom);
+  outline.setAttribute('stroke-width', Math.max(2.5, 2.5));
   outline.setAttribute('stroke-linejoin', 'round');
   g.appendChild(outline);
   previewGrp.appendChild(g);
@@ -940,7 +940,7 @@ function showImageBorder(){
   b.setAttribute('x',im.cx-im.w/2); b.setAttribute('y',im.cy-im.h/2);
   b.setAttribute('width',im.w); b.setAttribute('height',im.h);
   b.setAttribute('fill','none'); b.setAttribute('stroke','var(--accent)');
-  b.setAttribute('stroke-width',1/zoom); b.setAttribute('stroke-dasharray',`${5/zoom},${3/zoom}`);
+  b.setAttribute('stroke-width', Math.max(1, 1)); b.setAttribute('stroke-dasharray',`${Math.max(5, 5)},${Math.max(3, 3)}`);
   b.setAttribute('pointer-events','none'); b.id='imgBorder';
   imgGrp.appendChild(b);
   [{x:im.cx-im.w/2,y:im.cy-im.h/2},{x:im.cx+im.w/2,y:im.cy-im.h/2},
@@ -1242,7 +1242,7 @@ function buildMineField(pts,color){
     while(ac-lc>=sp){ const t=clamp((lc+sp-(ac-sl))/sl,0,1);
       const mx=pts[i-1].x+(pts[i].x-pts[i-1].x)*t, my=pts[i-1].y+(pts[i].y-pts[i-1].y)*t;
       const c=NS('circle'); c.setAttribute('cx',mx); c.setAttribute('cy',my);
-      c.setAttribute('r',4/zoom); c.setAttribute('fill','none'); c.setAttribute('stroke',color);
+      c.setAttribute('r', Math.max(4, 4)); c.setAttribute('fill','none'); c.setAttribute('stroke',color);
       c.setAttribute('stroke-width',1); c.setAttribute('vector-effect','non-scaling-stroke');
       c.style.pointerEvents='none'; g.appendChild(c); lc+=sp; } }
   return g;
@@ -1292,7 +1292,7 @@ function makeSvgBadge(text,x,y,unit,color,cls){
   g.setAttribute('transform',`translate(${x},${y})`); g.setAttribute('pointer-events','none');
   const bg=NS('rect'); bg.setAttribute('x',-w/2); bg.setAttribute('y',-h/2); bg.setAttribute('width',w); bg.setAttribute('height',h);
   bg.setAttribute('rx',4*unit); bg.setAttribute('fill','#10101d'); bg.setAttribute('fill-opacity','.9');
-  bg.setAttribute('stroke',color||'#f0c040'); bg.setAttribute('stroke-width',1*unit); bg.setAttribute('stroke-opacity','.55');
+  bg.setAttribute('stroke',color||'#f0c040'); bg.setAttribute('stroke-width', Math.max(1, 1*unit)); bg.setAttribute('stroke-opacity','.55');
   const t=NS('text'); t.setAttribute('x',0); t.setAttribute('y',4.2*unit); t.setAttribute('fill','#f4d35e');
   t.setAttribute('font-size',font); t.setAttribute('font-family','Segoe UI, Arial, sans-serif'); t.setAttribute('font-weight','700'); t.setAttribute('text-anchor','middle'); t.textContent=text;
   g.appendChild(bg); g.appendChild(t); return g;
@@ -1493,7 +1493,7 @@ function drawSelBox(){
   box.setAttribute('x',x1-pad); box.setAttribute('y',y1-pad);
   box.setAttribute('width',x2-x1+pad*2); box.setAttribute('height',y2-y1+pad*2);
   box.setAttribute('fill','rgba(240,192,64,.07)'); box.setAttribute('stroke','#f0c040');
-  box.setAttribute('stroke-width',1.5/zoom); box.setAttribute('stroke-dasharray',`${5/zoom},${3/zoom}`);
+  box.setAttribute('stroke-width', Math.max(1.5, 1.5)); box.setAttribute('stroke-dasharray',`${Math.max(5, 5)},${Math.max(3, 3)}`);
   box.setAttribute('pointer-events','none'); selGrp.appendChild(box);
   if(selectedIds.size===1){
     const el=elements.find(e=>e.id===Array.from(selectedIds)[0]);
@@ -1606,7 +1606,7 @@ function updateLabel(elData){
   bg.setAttribute('width',w); bg.setAttribute('height',h);
   bg.setAttribute('rx',4*unit); bg.setAttribute('fill','#10101d');
   bg.setAttribute('fill-opacity','.88'); bg.setAttribute('stroke','#f0c040');
-  bg.setAttribute('stroke-width',1.1*unit); bg.setAttribute('stroke-opacity','.45');
+  bg.setAttribute('stroke-width', Math.max(1.1, 1.1*unit)); bg.setAttribute('stroke-opacity','.45');
   const t=NS('text');
   t.setAttribute('x',0); t.setAttribute('y',4.2*unit);
   t.setAttribute('fill','#f4d35e'); t.setAttribute('font-size',font);
