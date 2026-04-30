@@ -1072,7 +1072,7 @@ function applyProject(project){
     const s = project.settings || {};
     panX = finiteNumber(s.panX, 0); 
     panY = finiteNumber(s.panY, 0); 
-    zoom = clamp(finiteNumber(s.zoom, 1), 0.04, 24);
+    zoom = clamp(finiteNumber(s.zoom, 1), 0.04, 23);
     
     if(s.colorFriendly) document.getElementById('colorFriendly').value = s.colorFriendly;
     if(s.colorEnemy) document.getElementById('colorEnemy').value = s.colorEnemy;
@@ -1471,23 +1471,55 @@ function selectInRect(r){ elements.forEach(el=>{ const bb=getElBBox(el); if(bb.x
 
 // ─── DRAG & RESIZE ───────────────────────────────────────────────────────
 function applyDrag(ds,dx,dy){
-  const d=ds.elData.data;
-  if(ds.elData.type==='symbol'){
-    d.x=ds.orig.x+dx; d.y=ds.orig.y+dy;
-    ds.elData.el.setAttribute('transform',`translate(${d.x},${d.y}) scale(${(d.scale||1)/zoom})`);
-  } else if(ds.elData.type==='text'){
-    d.x=ds.orig.x+dx; d.y=ds.orig.y+dy;
-    ds.elData.el.setAttribute('transform',`translate(${d.x},${d.y})`);
-  } else if(ds.elData.type==='line'||ds.elData.type==='measure'){
-    d.start={x:ds.orig.start.x+dx,y:ds.orig.start.y+dy};
-    d.end={x:ds.orig.end.x+dx,y:ds.orig.end.y+dy};
-    rebuildEl(ds.elData);
-  } else if(d.points){
-    d.points=ds.orig.points.map(p=>({x:p.x+dx,y:p.y+dy}));
-    rebuildEl(ds.elData);
+  // Перемещаем все выбранные элементы как один
+  if(ds.ids && ds.origPositions){
+    // Множественное выделение - перемещаем все элементы
+    ds.ids.forEach(id=>{
+      const el=elements.find(e=>e.id===id);
+      if(!el) return;
+      const orig=ds.origPositions.get(id);
+      if(!orig) return;
+      const d=el.data;
+      if(el.type==='symbol'){
+        d.x=(orig.x||0)+dx; d.y=(orig.y||0)+dy;
+        el.el.setAttribute('transform',`translate(${d.x},${d.y}) scale(${(d.scale||1)/zoom})`);
+      } else if(el.type==='text'){
+        d.x=(orig.x||0)+dx; d.y=(orig.y||0)+dy;
+        el.el.setAttribute('transform',`translate(${d.x},${d.y})`);
+      } else if(el.type==='line'||el.type==='measure'){
+        d.start={x:orig.start.x+dx,y:orig.start.y+dy};
+        d.end={x:orig.end.x+dx,y:orig.end.y+dy};
+        rebuildEl(el);
+      } else if(orig.points){
+        d.points=orig.points.map(p=>({x:p.x+dx,y:p.y+dy}));
+        rebuildEl(el);
+      }
+      if(el.type==='wide-arrow') updateWideArrowMerges();
+      updateLabel(el);
+    });
+  } else {
+    // Одиночное выделение (старый режим для совместимости)
+    const el=ds.elData;
+    if(!el) return;
+    const d=el.data;
+    if(el.type==='symbol'){
+      d.x=(d.x||0)+dx; d.y=(d.y||0)+dy;
+      el.el.setAttribute('transform',`translate(${d.x},${d.y}) scale(${(d.scale||1)/zoom})`);
+    } else if(el.type==='text'){
+      d.x=(d.x||0)+dx; d.y=(d.y||0)+dy;
+      el.el.setAttribute('transform',`translate(${d.x},${d.y})`);
+    } else if(el.type==='line'||el.type==='measure'){
+      d.start={x:d.start.x+dx,y:d.start.y+dy};
+      d.end={x:d.end.x+dx,y:d.end.y+dy};
+      rebuildEl(el);
+    } else if(d.points){
+      d.points=d.points.map(p=>({x:p.x+dx,y:p.y+dy}));
+      rebuildEl(el);
+    }
+    if(el.type==='wide-arrow') updateWideArrowMerges();
+    updateLabel(el);
   }
-  if(ds.elData.type==='wide-arrow') updateWideArrowMerges();
-  updateLabel(ds.elData); if(selectedIds.has(ds.id)) drawSelBox();
+  drawSelBox();
 }
 
 function applyResize(rs,dx,dy){
@@ -1689,17 +1721,32 @@ document.addEventListener('keydown', onKeyDown);
 svg.addEventListener('contextmenu', e=>{ e.preventDefault(); onContextMenu(e); });
 
 function onContextMenu(e){
-  if(currentTool!=='select') return;
   const p=getSvgPt(e);
   const target=e.target.closest('[data-eid]');
   if(target){
     const id=parseInt(target.dataset.eid);
+    // Если элемент уже выбран и зажаты Ctrl/Meta - снимаем выделение
+    if((e.ctrlKey||e.metaKey)&&selectedIds.has(id)){
+      selectedIds.delete(id);
+      drawSelBox();
+      return;
+    }
+    // Если элемент не выбран - выбираем его
     if(!selectedIds.has(id)){
-      selectedIds.clear();
+      if(!e.ctrlKey&&!e.metaKey) selectedIds.clear();
       selectedIds.add(id);
       deselectImages(); drawSelBox();
-      const elData=elements.find(el=>el.id===id);
-      if(elData){ saveHistory(); dragState={id,elData,orig:JSON.parse(JSON.stringify(elData.data)),startX:p.x,startY:p.y}; }
+    }
+    // Инициализируем перетаскивание для всех выбранных элементов
+    if(selectedIds.size>0&&!dragState){
+      saveHistory();
+      dragState={
+        ids:Array.from(selectedIds),
+        origPositions:new Map(selectedIds.map(sid=>{
+          const el=elements.find(e=>e.id===sid);
+          return [sid, el?JSON.parse(JSON.stringify(el.data)):null];
+        }))
+      };
     }
   }
 }
@@ -1739,8 +1786,20 @@ function onMouseDown(e){
       if(e.ctrlKey||e.metaKey){ if(selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id); }
       else selectedIds.add(id);
       deselectImages(); drawSelBox();
-      const elData=elements.find(el=>el.id===id);
-      if(elData){ saveHistory(); dragState={id,elData,orig:JSON.parse(JSON.stringify(elData.data)),startX:p.x,startY:p.y}; }
+      // Сохраняем начальные позиции всех выбранных элементов
+      if(selectedIds.size>0){
+        saveHistory();
+        const elData=elements.find(el=>el.id===id);
+        if(elData){
+          dragState={
+            ids:Array.from(selectedIds),
+            origPositions:new Map(selectedIds.map(sid=>{
+              const el=elements.find(e=>e.id===sid);
+              return [sid, el?JSON.parse(JSON.stringify(el.data)):null];
+            }))
+          };
+        }
+      }
       return;
     }
     if(!e.ctrlKey&&!e.metaKey){ clearSelection(); deselectImages(); }
@@ -1894,7 +1953,7 @@ function onWheel(e){
   e.preventDefault();
   const f=e.deltaY<0?1.14:1/1.14, r=canvasArea.getBoundingClientRect();
   panX=(e.clientX-r.left)-(e.clientX-r.left-panX)*f; panY=(e.clientY-r.top)-(e.clientY-r.top-panY)*f;
-  zoom=clamp(zoom*f,0.04,24); updateTransform();
+  zoom=clamp(zoom*f,0.04,23); updateTransform();
   if(currentTool==='symbol') refreshSymPreviewPos();
 }
 
