@@ -1706,6 +1706,8 @@ function setTool(tool,symBtn){
   updateImageInteractivity();
   updateStatus();
   isDrawing=false; drawPts=[];
+  // Скрываем меню меток при смене инструмента
+  hideLabelMenu();
 }
 
 // ─── EVENTS ─────────────────────────────────────────────────────────────
@@ -1877,6 +1879,9 @@ function onMouseUp(e){
     rubberState=null; clearPreview(); return;
   }
 
+  // Если меню меток открыто, не обрабатываем mouseup для рисования
+  if(labelMenu && labelMenu.style.display === 'block') return;
+
   if(!isDrawing) return;
   isDrawing=false; clearPreview();
   if(drawPts.length<2) return;
@@ -1934,11 +1939,137 @@ function drawRubberBand(sx,sy,ex,ey){
   previewGrp.appendChild(rect);
 }
 
+// ─── DOUBLE CLICK FOR LABELS ─────────────────────────────────────────────
+let labelMenu = null;
+
+function createLabelMenu() {
+  if (labelMenu) return;
+  labelMenu = document.createElement('div');
+  labelMenu.id = 'labelMenu';
+  labelMenu.style.cssText = `
+    position:absolute;display:none;z-index:1000;
+    background:rgba(23,23,42,.98);border:1px solid var(--border);
+    border-radius:8px;padding:8px;box-shadow:var(--shadow);
+    min-width:200px;backdrop-filter:blur(8px);
+  `;
+  
+  const title = document.createElement('div');
+  title.textContent = 'Выберите метку';
+  title.style.cssText = 'font-size:11px;color:var(--accent);margin-bottom:6px;font-weight:600;';
+  labelMenu.appendChild(title);
+  
+  const select = document.createElement('select');
+  select.id = 'labelSelect';
+  select.style.cssText = `
+    width:100%;background:rgba(255,255,255,.07);
+    border:1px solid var(--border);color:var(--text);
+    padding:6px 8px;border-radius:4px;font-size:11px;
+    outline:none;margin-bottom:8px;
+  `;
+  
+  const labels = [
+    '', 'Атака', 'Оборона', 'Отход', 'Резерв', 
+    'Наблюдение', 'Огневая точка', 'КП', 'Склад',
+    'Минное поле', 'Траншея', 'Блокпост', 'ДЗОТ',
+    'Артиллерия', 'ПВО', 'Разведка', 'Медпункт'
+  ];
+  
+  labels.forEach(lbl => {
+    const opt = document.createElement('option');
+    opt.value = lbl;
+    opt.textContent = lbl || '(нет)';
+    select.appendChild(opt);
+  });
+  
+  labelMenu.appendChild(select);
+  
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;';
+  
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Отмена';
+  cancelBtn.style.cssText = `
+    background:rgba(255,255,255,.07);border:1px solid var(--border);
+    color:var(--text);padding:5px 12px;border-radius:4px;
+    font-size:11px;cursor:pointer;
+  `;
+  cancelBtn.onclick = hideLabelMenu;
+  
+  const okBtn = document.createElement('button');
+  okBtn.textContent = 'OK';
+  okBtn.style.cssText = `
+    background:var(--accent);border:none;color:#17172a;
+    padding:5px 12px;border-radius:4px;font-size:11px;
+    cursor:pointer;font-weight:600;
+  `;
+  okBtn.onclick = applyLabelFromMenu;
+  
+  btnRow.appendChild(cancelBtn);
+  btnRow.appendChild(okBtn);
+  labelMenu.appendChild(btnRow);
+  
+  document.body.appendChild(labelMenu);
+}
+
+function showLabelMenu(x, y, currentLabel) {
+  createLabelMenu();
+  const select = document.getElementById('labelSelect');
+  select.value = currentLabel || '';
+  labelMenu.style.left = x + 'px';
+  labelMenu.style.top = y + 'px';
+  labelMenu.style.display = 'block';
+  labelMenu.dataset.targetX = x;
+  labelMenu.dataset.targetY = y;
+  select.focus();
+}
+
+function hideLabelMenu() {
+  if (labelMenu) labelMenu.style.display = 'none';
+}
+
+function applyLabelFromMenu() {
+  if (!labelMenu || labelMenu.style.display === 'none') return;
+  const select = document.getElementById('labelSelect');
+  const label = select.value.trim();
+  const targetX = parseFloat(labelMenu.dataset.targetX);
+  const targetY = parseFloat(labelMenu.dataset.targetY);
+  
+  // Создаем текстовую метку в указанной позиции
+  saveHistory();
+  const id = nextId++;
+  const color = getColor();
+  const data = { x: targetX, y: targetY, text: label, color, scale: 1 };
+  const g = buildTextNote(data, color);
+  registerEl(g, id);
+  elemGroup.appendChild(g);
+  elements.push({ id, type: 'text', data, el: g });
+  
+  hideLabelMenu();
+  updateStatus();
+  showToast(`Метка "${label || '(пусто)'}" добавлена`, 'success');
+}
+
 function onDblClick(e){
-  if(currentTool!=='select'||selectedIds.size!==1) return;
-  const elData=elements.find(el=>el.id===Array.from(selectedIds)[0]); if(!elData) return;
-  const label=prompt('Подпись:',elData.el.dataset.label||'');
-  if(label!==null){ elData.el.dataset.label=label; updateLabel(elData); }
+  const p = getSvgPt(e);
+  
+  // Проверяем, кликнули ли по существующему элементу
+  const target = e.target.closest('[data-eid]');
+  if (target && currentTool === 'select') {
+    // Двойной клик по элементу - редактирование подписи
+    const id = parseInt(target.dataset.eid);
+    const elData = elements.find(el => el.id === id);
+    if (!elData) return;
+    const label = prompt('Подпись:', elData.el.dataset.label || '');
+    if (label !== null) {
+      elData.el.dataset.label = label;
+      updateLabel(elData);
+    }
+    return;
+  }
+  
+  // Двойной клик по пустому месту - создание метки через меню
+  createLabelMenu();
+  showLabelMenu(e.clientX, e.clientY, '');
 }
 
 function onWheel(e){
@@ -1951,11 +2082,21 @@ function onWheel(e){
 
 function onKeyDown(e){
   if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  // Если меню меток открыто, обрабатываем Enter и Escape для него
+  if(labelMenu && labelMenu.style.display === 'block'){
+    if(e.key === 'Enter'){ e.preventDefault(); applyLabelFromMenu(); return; }
+    if(e.key === 'Escape'){ e.preventDefault(); hideLabelMenu(); return; }
+    return;
+  }
   if((e.key==='Delete'||e.key==='Backspace')&&!e.ctrlKey){ e.preventDefault(); deleteSelected(); return; }
   if(e.ctrlKey&&e.key==='z'){ e.preventDefault(); undoAction(); return; }
   if(e.ctrlKey&&e.key==='a'){ e.preventDefault(); elements.forEach(el=>selectedIds.add(el.id)); drawSelBox(); return; }
   if(e.ctrlKey&&e.key==='d'){ e.preventDefault(); duplicateSelected(); return; }
-  if(e.key==='Escape'){ setTool('select'); return; }
+  if(e.key==='Escape'){ 
+    hideLabelMenu();
+    setTool('select'); 
+    return; 
+  }
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)&&selectedIds.size){
     e.preventDefault();
     const step=(e.shiftKey?10:1)/zoom;
