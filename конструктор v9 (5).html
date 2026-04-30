@@ -1072,7 +1072,7 @@ function applyProject(project){
     const s = project.settings || {};
     panX = finiteNumber(s.panX, 0); 
     panY = finiteNumber(s.panY, 0); 
-    zoom = clamp(finiteNumber(s.zoom, 1), 0.04, 23);
+    zoom = clamp(finiteNumber(s.zoom, 1), 0.04,23);
     
     if(s.colorFriendly) document.getElementById('colorFriendly').value = s.colorFriendly;
     if(s.colorEnemy) document.getElementById('colorEnemy').value = s.colorEnemy;
@@ -1740,19 +1740,6 @@ function onContextMenu(e){
     // Автоматически переключаемся в режим select при выборе элемента
     if(currentTool!=='select'){
       setTool('select');
-    }
-    // Инициализируем перетаскивание для всех выбранных элементов
-    if(selectedIds.size>0&&!dragState){
-      saveHistory();
-      dragState={
-        ids:Array.from(selectedIds),
-        startX:p.x,
-        startY:p.y,
-        origPositions:new Map(selectedIds.map(sid=>{
-          const el=elements.find(e=>e.id===sid);
-          return [sid, el?JSON.parse(JSON.stringify(el.data)):null];
-        }))
-      };
     }
   }
 }
