@@ -321,6 +321,23 @@ function smoothPath(pts){
   return d;
 }
 
+// Catmull-Rom → Bezier (замкнутый путь для зон/районов)
+function smoothPathClosed(pts){
+  if(!pts||pts.length<2) return '';
+  if(pts.length===2) return `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}L${pts[1].x.toFixed(1)},${pts[1].y.toFixed(1)}Z`;
+  // Дублируем точки для замыкания
+  const ext=[pts[pts.length-1],...pts,pts[0],pts[1]];
+  let d='';
+  for(let i=1;i<pts.length+1;i++){
+    const p0=ext[i-1],p1=ext[i],p2=ext[i+1],p3=ext[i+2];
+    const cp1x=p1.x+(p2.x-p0.x)/6, cp1y=p1.y+(p2.y-p0.y)/6;
+    const cp2x=p2.x-(p3.x-p1.x)/6, cp2y=p2.y-(p3.y-p1.y)/6;
+    if(i===1) d+=`M${p1.x.toFixed(1)},${p1.y.toFixed(1)}`;
+    d+=`C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+  }
+  return d+'Z';
+}
+
 // Ramer-Douglas-Peucker
 function simplify(pts,eps){
   eps=eps||1.5;
@@ -769,7 +786,7 @@ function updateTransform(){
 function zoomBy(f){
   const r=canvasArea.getBoundingClientRect();
   panX=(r.width/2)-(r.width/2-panX)*f; panY=(r.height/2)-(r.height/2-panY)*f;
-  zoom=clamp(zoom*f,0.04,24); updateTransform();
+  zoom=clamp(zoom*f,0.04,23); updateTransform();
   if(currentTool==='symbol') refreshSymPreviewPos();
 }
 function zoomReset(){ zoom=1; panX=0; panY=0; updateTransform(); }
@@ -1142,11 +1159,18 @@ function buildLine(start,end,color){
 }
 function buildArea(pts,color){
   const g=NS('g'); g.dataset.label='';
-  const poly=NS('polygon'); poly.setAttribute('points',pts.map(p=>`${p.x},${p.y}`).join(' '));
-  poly.setAttribute('fill',color); poly.setAttribute('fill-opacity','.15');
-  poly.setAttribute('stroke',color); poly.setAttribute('stroke-width',2);
-  poly.setAttribute('vector-effect','non-scaling-stroke'); poly.style.cursor='move';
-  g.appendChild(poly); return g;
+  // Создаем сглаженный путь для более плавных границ
+  const d=smoothPathClosed(pts);
+  const path=NS('path'); 
+  path.setAttribute('d',d);
+  path.setAttribute('fill',color); 
+  path.setAttribute('fill-opacity','.15');
+  path.setAttribute('stroke',color); 
+  path.setAttribute('stroke-width',2);
+  path.setAttribute('vector-effect','non-scaling-stroke'); 
+  path.style.cursor='move';
+  g.appendChild(path); 
+  return g;
 }
 function buildPoint(pt,color){
   const g=NS('g'); g.dataset.label='';
@@ -1662,7 +1686,23 @@ window.addEventListener('mouseup', onMouseUp);
 svg.addEventListener('dblclick',  onDblClick);
 canvasArea.addEventListener('wheel', onWheel, {passive:false});
 document.addEventListener('keydown', onKeyDown);
-svg.addEventListener('contextmenu', e=>e.preventDefault());
+svg.addEventListener('contextmenu', e=>{ e.preventDefault(); onContextMenu(e); });
+
+function onContextMenu(e){
+  if(currentTool!=='select') return;
+  const p=getSvgPt(e);
+  const target=e.target.closest('[data-eid]');
+  if(target){
+    const id=parseInt(target.dataset.eid);
+    if(!selectedIds.has(id)){
+      selectedIds.clear();
+      selectedIds.add(id);
+      deselectImages(); drawSelBox();
+      const elData=elements.find(el=>el.id===id);
+      if(elData){ saveHistory(); dragState={id,elData,orig:JSON.parse(JSON.stringify(elData.data)),startX:p.x,startY:p.y}; }
+    }
+  }
+}
 
 function onMouseDown(e){
   if(e.button===1||currentTool==='pan'){

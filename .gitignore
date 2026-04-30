@@ -1,3 +1,3 @@
-The modified file path appears to be corrupted/encoded text that doesn't represent a valid file path to ignore. Since there are no actual build artifacts, dependencies, or temporary files in the changes that would warrant gitignore entries, and the current .gitignore is empty with no relevant rules to preserve, no .gitignore content is needed.
+The modified file appears to be a Cyrillic-named file ("Конструктор"), which doesn't match any common ignore patterns for compiled files, dependencies, temporary files, or other artifacts that should be ignored. Since this is just a source file name in a different language/script and not a build artifact, dependency directory, or temporary file, no additional ignore rules are needed.
 
 (empty)
