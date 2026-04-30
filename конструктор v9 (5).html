@@ -20,7 +20,7 @@
   --text-dim: #7070a0;
   --shadow: 0 14px 40px rgba(0,0,0,.32);
 }
-*{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
 .app{display:flex;height:100vh}
 
@@ -103,16 +103,24 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <body>
 <div class="app">
 <div class="sidebar">
-  <div class="sidebar-header">⚔ КОНСТРУКТОР ОПЕРАЦИЙ</div>
+  <div class="sidebar-header">
+    <button id="fileMenuBtn" class="act-btn" style="width:auto;padding:4px 8px;border-radius:4px;margin-right:8px;" onclick="toggleFileMenu()">📁 Файл</button>
+    <span>⚔ КОНСТРУКТОР ОПЕРАЦИЙ</span>
+  </div>
+  
+  <!-- Выпадающее меню Файл -->
+  <div id="fileMenu" style="display:none;position:absolute;top:42px;left:10px;background:rgba(23,23,42,.98);border:1px solid var(--border);border-radius:6px;padding:4px;z-index:100;box-shadow:var(--shadow);min-width:200px;">
+    <button class="act-btn" onclick="document.getElementById('fileInput').click();toggleFileMenu();" style="border-radius:4px;"><span class="icon">📁</span> Загрузить изображение</button>
+    <button class="act-btn" onclick="pasteFromClipboard();toggleFileMenu();" style="border-radius:4px;"><span class="icon">📋</span> Вставить из буфера</button>
+    <div class="divider" style="margin:4px 0;"></div>
+    <button class="act-btn" onclick="saveProject();toggleFileMenu();" style="border-radius:4px;"><span class="icon">💾</span> Сохранить проект</button>
+    <button class="act-btn" onclick="document.getElementById('projectInput').click();toggleFileMenu();" style="border-radius:4px;"><span class="icon">📂</span> Загрузить проект</button>
+    <div class="divider" style="margin:4px 0;"></div>
+    <button class="act-btn" onclick="showExportDialog();toggleFileMenu();" style="border-radius:4px;"><span class="icon">💾</span> Экспорт PNG</button>
+    <button class="act-btn" onclick="exportSVG();toggleFileMenu();" style="border-radius:4px;"><span class="icon">▣</span> Экспорт SVG</button>
+  </div>
+  
   <div class="sidebar-scroll">
-
-    <div class="sec-title">Карта</div>
-    <button class="act-btn" onclick="document.getElementById('fileInput').click()"><span class="icon">📁</span> Загрузить изображение</button>
-    <button class="act-btn" onclick="pasteFromClipboard()"><span class="icon">📋</span> Вставить из буфера</button>
-    <div class="divider"></div>
-    <button class="act-btn" onclick="saveProject()"><span class="icon">💾</span> Сохранить проект</button>
-    <button class="act-btn" onclick="document.getElementById('projectInput').click()"><span class="icon">📂</span> Загрузить проект</button>
-    <input type="file" id="projectInput" accept=".json,.txt" style="display:none" onchange="loadProject(this)">
 
     <div class="sec-title">Инструменты</div>
     <button class="act-btn tool-btn" data-tool="marker"          onclick="setTool('marker')"><span class="icon">🖍</span> Маркер</button>
@@ -139,19 +147,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 
   <div class="sidebar-footer">
-    <div class="export-row">
-      <span>Качество PNG</span>
-      <select id="exportScale">
-        <option value="1">1x</option>
-        <option value="2" selected>2x</option>
-        <option value="3">3x</option>
-        <option value="4">4x</option>
-      </select>
-    </div>
     <button class="act-btn" onclick="undoAction()"><span class="icon">↩</span> Отменить (Ctrl+Z)</button>
     <button class="act-btn" onclick="clearAll()"><span class="icon">🗑</span> Очистить всё</button>
-    <button class="act-btn" onclick="exportPNG()"><span class="icon">💾</span> Экспорт PNG</button>
-    <button class="act-btn" onclick="exportSVG()"><span class="icon">▣</span> Экспорт SVG</button>
   </div>
 </div>
 
@@ -264,6 +261,81 @@ function showToast(text,type){
   toastEl.className='toast visible'+(type?' '+type:'');
   toastTimer=setTimeout(()=>{ toastEl.className='toast'; },2600);
 }
+
+// Toggle file menu
+function toggleFileMenu(){
+  const menu = document.getElementById('fileMenu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Close file menu when clicking outside
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('fileMenu');
+  const btn = document.getElementById('fileMenuBtn');
+  if(menu && !menu.contains(e.target) && e.target !== btn){
+    menu.style.display = 'none';
+  }
+});
+
+// Export dialog
+let exportDialog = null;
+function showExportDialog(){
+  if(exportDialog){
+    exportDialog.style.display = 'block';
+    return;
+  }
+  exportDialog = document.createElement('div');
+  exportDialog.id = 'exportDialog';
+  exportDialog.style.cssText = `
+    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    background:rgba(23,23,42,.98);border:1px solid var(--border);
+    border-radius:8px;padding:16px;z-index:1000;box-shadow:var(--shadow);
+    min-width:240px;backdrop-filter:blur(8px);
+  `;
+  
+  const title = document.createElement('div');
+  title.textContent = 'Экспорт PNG';
+  title.style.cssText = 'font-size:12px;color:var(--accent);margin-bottom:12px;font-weight:700;';
+  exportDialog.appendChild(title);
+  
+  const qualityLabel = document.createElement('div');
+  qualityLabel.textContent = 'Выберите качество:';
+  qualityLabel.style.cssText = 'font-size:11px;color:var(--text-dim);margin-bottom:8px;';
+  exportDialog.appendChild(qualityLabel);
+  
+  const qualityRow = document.createElement('div');
+  qualityRow.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px;';
+  
+  [1, 2, 3, 4].forEach(scale => {
+    const btn = document.createElement('button');
+    btn.textContent = scale + 'x';
+    btn.style.cssText = `
+      background:rgba(255,255,255,.07);border:1px solid var(--border);
+      color:var(--text);padding:8px;border-radius:5px;font-size:11px;
+      cursor:pointer;transition:.12s;
+    `;
+    btn.onmouseover = () => btn.style.background = 'var(--accent-dim)';
+    btn.onmouseout = () => btn.style.background = 'rgba(255,255,255,.07)';
+    btn.onclick = () => {
+      exportPNG(scale);
+      exportDialog.style.display = 'none';
+    };
+    qualityRow.appendChild(btn);
+  });
+  exportDialog.appendChild(qualityRow);
+  
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Отмена';
+  cancelBtn.style.cssText = `
+    width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);
+    color:var(--text);padding:8px;border-radius:5px;font-size:11px;cursor:pointer;
+  `;
+  cancelBtn.onclick = () => exportDialog.style.display = 'none';
+  exportDialog.appendChild(cancelBtn);
+  
+  document.body.appendChild(exportDialog);
+}
+
 function downloadBlob(blob,filename){
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -2080,7 +2152,7 @@ function onKeyDown(e){
   }
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)&&selectedIds.size){
     e.preventDefault();
-    const step=(e.shiftKey?10:1)/zoom;
+    const step=(e.shiftKey?20:5)/zoom;
     const dx=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0;
     const dy=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;
     saveHistory();
@@ -2224,8 +2296,8 @@ function exportSVG(){
   showToast('SVG экспортирован','success');
 }
 
-function exportPNG(){
-  const {source,outW,outH,scale,requested}=exportSource(undefined,true);
+function exportPNG(scaleOverride){
+  const {source,outW,outH,scale,requested}=exportSource(scaleOverride,true);
   const url=URL.createObjectURL(new Blob([source],{type:'image/svg+xml;charset=utf-8'}));
   const canvas=document.createElement('canvas'); canvas.width=outW; canvas.height=outH;
   const img=new Image();
@@ -2254,9 +2326,6 @@ function exportPNG(){
     setForceSide(activeForce);
     if(currentTool==='symbol'&&currentSymbol){ createSymPreview(); refreshSymPreviewPos(); }
   });
-});
-document.getElementById('exportScale').addEventListener('change',()=>{
-  showToast(`Качество PNG: ${document.getElementById('exportScale').value}x`,'success');
 });
 setForceSide('friendly');
 setTool('select');
