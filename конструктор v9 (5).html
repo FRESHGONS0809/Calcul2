@@ -112,9 +112,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <div class="divider"></div>
     <button class="act-btn" onclick="saveProject()"><span class="icon">💾</span> Сохранить проект</button>
     <button class="act-btn" onclick="document.getElementById('projectInput').click()"><span class="icon">📂</span> Загрузить проект</button>
-    <button class="act-btn" onclick="document.getElementById('symbolsInput').click()"><span class="icon">🏷️</span> Импорт меток</button>
     <input type="file" id="projectInput" accept=".json,.txt" style="display:none" onchange="loadProject(this)">
-    <input type="file" id="symbolsInput" accept=".json" style="display:none" onchange="importCustomSymbols(this)">
 
     <div class="sec-title">Инструменты</div>
     <button class="act-btn tool-btn" data-tool="marker"          onclick="setTool('marker')"><span class="icon">🖍</span> Маркер</button>
@@ -126,6 +124,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <button class="act-btn tool-btn" data-tool="boundary"        onclick="setTool('boundary')"><span class="icon">▥</span> Рубеж / граница</button>
     <button class="act-btn tool-btn" data-tool="measure"         onclick="setTool('measure')"><span class="icon">↔</span> Линейка</button>
     <button class="act-btn tool-btn" data-tool="text"            onclick="setTool('text')"><span class="icon">T</span> Текстовая метка</button>
+    <button class="act-btn tool-btn" data-tool="point"           onclick="setTool('point')"><span class="icon">●</span> Точка</button>
 
     <div class="sec-title">Инженерные</div>
     <button class="act-btn tool-btn" data-tool="mine"   onclick="setTool('mine')"><span class="icon">💣</span> Минное поле</button>
@@ -1110,47 +1109,6 @@ document.getElementById('projectInput').addEventListener('change', function(e){
   }
 });
 
-// ─── IMPORT CUSTOM SYMBOLS ───────────────────────────────────────────────
-function importCustomSymbols(file){
-  const reader=new FileReader();
-  reader.onload=function(e){
-    try{
-      const customSymbols=JSON.parse(e.target.result);
-      if(!Array.isArray(customSymbols)){
-        throw new Error('Файл должен содержать массив меток');
-      }
-      
-      // Validate and merge symbols
-      let addedCount=0;
-      customSymbols.forEach(sym=>{
-        if(sym.id && sym.path && sym.category){
-          // Check if symbol already exists
-          const existingIndex=symbols.findIndex(s=>s.id===sym.id);
-          if(existingIndex>=0){
-            symbols[existingIndex]=sym; // Update existing
-          }else{
-            symbols.push(sym); // Add new
-          }
-          addedCount++;
-        }
-      });
-      
-      renderSymbolPalette();
-      showToast(`Импортировано ${addedCount} меток`, 'success');
-    }catch(err){
-      showToast('Ошибка импорта меток: '+err.message,'error');
-    }
-  };
-  reader.readAsText(file,'utf-8');
-}
-
-document.getElementById('symbolsInput').addEventListener('change', function(e){
-  if(e.target.files && e.target.files[0]){
-    importCustomSymbols(e.target.files[0]);
-    this.value = '';
-  }
-});
-
 // ─── ELEMENT BUILDERS ────────────────────────────────────────────────────
 function setPathStyle(el,color,width,dash){
   el.setAttribute('stroke',color); el.setAttribute('stroke-width',width||2);
@@ -1189,6 +1147,15 @@ function buildArea(pts,color){
   poly.setAttribute('stroke',color); poly.setAttribute('stroke-width',2);
   poly.setAttribute('vector-effect','non-scaling-stroke'); poly.style.cursor='move';
   g.appendChild(poly); return g;
+}
+function buildPoint(pt,color){
+  const g=NS('g'); g.dataset.label='';
+  const circle=NS('circle'); 
+  circle.setAttribute('cx',pt.x); circle.setAttribute('cy',pt.y);
+  circle.setAttribute('r',6); circle.setAttribute('fill',color);
+  circle.setAttribute('stroke',color); circle.setAttribute('stroke-width',1.5);
+  circle.setAttribute('vector-effect','non-scaling-stroke'); circle.style.cursor='move';
+  g.appendChild(circle); return g;
 }
 function buildMarker(pts,color){
   const g=NS('g'); g.dataset.label='';
@@ -1325,6 +1292,7 @@ function rebuildEl(elData){
   else if(type==='text')            fresh=buildTextNote(data,data.color);
   else if(type==='mine')            fresh=buildMineField(pts,data.color);
   else if(type==='trench')          fresh=buildTrench(pts,data.color);
+  else if(type==='point')           fresh=buildPoint(data,data.color);
   else return;
   while(fresh.firstChild) g.appendChild(fresh.firstChild);
   applyElementStyle(elData);
@@ -1752,6 +1720,13 @@ function onMouseDown(e){
     saveHistory(); const id=nextId++; const color=getColor();
     const g=buildSymbol(currentSymbol,p,color,1); registerEl(g,id); elemGroup.appendChild(g);
     elements.push({id,type:'symbol',data:{symbol:currentSymbol,x:p.x,y:p.y,color,scale:1},el:g}); updateStatus(); return;
+  }
+
+  if(currentTool==='point'){
+    saveHistory(); const id=nextId++, color=getColor();
+    const data={x:p.x,y:p.y,color};
+    const g=buildPoint(p,color); registerEl(g,id); elemGroup.appendChild(g);
+    elements.push({id,type:'point',data,el:g}); updateStatus(); return;
   }
 
   const drawTools=['flex-arrow','flex-arrow-dash','wide-arrow','line','area','boundary','measure','marker','mine','trench'];
