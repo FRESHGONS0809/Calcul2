@@ -126,38 +126,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <button class="act-btn tool-btn" data-tool="text"            onclick="setTool('text')"><span class="icon">T</span> Текстовая метка</button>
     <button class="act-btn tool-btn" data-tool="point"           onclick="setTool('point')"><span class="icon">●</span> Точка</button>
 
-    <div class="sec-title">Инженерные</div>
-    <button class="act-btn tool-btn" data-tool="mine"   onclick="setTool('mine')"><span class="icon">💣</span> Минное поле</button>
-    <button class="act-btn tool-btn" data-tool="trench" onclick="setTool('trench')"><span class="icon">〰</span> Траншея</button>
-
-    <div class="sec-title">Сухопутные (NATO)</div>
-    <div class="sym-grid">
-      <button class="sym-btn" data-symbol="tank"         onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="6" y1="8" x2="26" y2="8" stroke="#e04040" stroke-width="1"/><line x1="6" y1="16" x2="26" y2="16" stroke="#e04040" stroke-width="1"/><rect x="12" y="4" width="8" height="4" fill="none" stroke="#e04040" stroke-width="1" rx="1"/></svg>Tank</button>
-      <button class="sym-btn" data-symbol="armour"       onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="8" y1="6" x2="24" y2="18" stroke="#e04040" stroke-width="1.2"/><line x1="24" y1="6" x2="8" y2="18" stroke="#e04040" stroke-width="1.2"/></svg>Armour</button>
-      <button class="sym-btn" data-symbol="infantry"     onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="10" y1="6" x2="22" y2="18" stroke="#e04040" stroke-width="1.2"/><line x1="22" y1="6" x2="10" y2="18" stroke="#e04040" stroke-width="1.2"/></svg>Infantry</button>
-      <button class="sym-btn" data-symbol="motorized"    onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><circle cx="16" cy="12" r="6" fill="none" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="2" fill="#e04040"/></svg>Motor.</button>
-      <button class="sym-btn" data-symbol="mech_inf"     onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="10" y1="6" x2="22" y2="18" stroke="#e04040" stroke-width="1.2"/><line x1="22" y1="6" x2="10" y2="18" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="3" fill="none" stroke="#e04040" stroke-width="1"/></svg>Mech Inf</button>
-      <button class="sym-btn" data-symbol="arty"         onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="3" y1="12" x2="29" y2="12" stroke="#e04040" stroke-width="1.2"/></svg>Arty</button>
-      <button class="sym-btn" data-symbol="missile"      onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="3" y1="12" x2="29" y2="12" stroke="#e04040" stroke-width="1.2"/><line x1="16" y1="3" x2="16" y2="21" stroke="#e04040" stroke-width="1.2"/></svg>Missile</button>
-      <button class="sym-btn" data-symbol="hq"           onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="4" y1="4" x2="4" y2="20" stroke="#e04040" stroke-width="1"/><line x1="4" y1="4" x2="16" y2="4" stroke="#e04040" stroke-width="1"/><line x1="16" y1="4" x2="16" y2="10" stroke="#e04040" stroke-width="1"/></svg>HQ</button>
-      <button class="sym-btn" data-symbol="recon"        onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><circle cx="16" cy="12" r="6" fill="none" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="2" fill="#e04040"/></svg>Recon</button>
-      <button class="sym-btn" data-symbol="atgm"         onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="8" y1="12" x2="24" y2="12" stroke="#e04040" stroke-width="1.5"/><polygon points="24,9 29,12 24,15" fill="#e04040"/></svg>ATGM</button>
-      <button class="sym-btn" data-symbol="sam"          onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="16" y1="6" x2="16" y2="18" stroke="#e04040" stroke-width="1.5"/><line x1="10" y1="12" x2="22" y2="12" stroke="#e04040" stroke-width="1.5"/></svg>SAM</button>
-      <button class="sym-btn" data-symbol="engineer"     onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="8" y1="8" x2="16" y2="16" stroke="#e04040" stroke-width="1.5"/><line x1="16" y1="8" x2="24" y2="16" stroke="#e04040" stroke-width="1.5"/><line x1="16" y1="16" x2="16" y2="20" stroke="#e04040" stroke-width="1.5"/></svg>Engineer</button>
-      <button class="sym-btn" data-symbol="medical"      onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="16" y1="6" x2="16" y2="18" stroke="#e04040" stroke-width="2"/><line x1="10" y1="12" x2="22" y2="12" stroke="#e04040" stroke-width="2"/></svg>Medical</button>
-      <button class="sym-btn" data-symbol="mortar"       onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="16" y1="3" x2="16" y2="21" stroke="#e04040" stroke-width="1.5"/><line x1="12" y1="12" x2="20" y2="12" stroke="#e04040" stroke-width="1.5"/></svg>Mortar</button>
-      <button class="sym-btn" data-symbol="support"      onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><circle cx="16" cy="12" r="5" fill="none" stroke="#e04040" stroke-width="1.2"/></svg>Support</button>
-      <button class="sym-btn" data-symbol="maint"        onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><polygon points="16,6 22,12 16,18 10,12" fill="none" stroke="#e04040" stroke-width="1.2"/></svg>Maint</button>
-      <button class="sym-btn" data-symbol="ew"           onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><path d="M8 12 Q10 6 12 12 Q14 18 16 12 Q18 6 20 12 Q22 18 24 12" fill="none" stroke="#e04040" stroke-width="1.2"/></svg>EW</button>
-      <button class="sym-btn" data-symbol="uav"          onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><polygon points="16,3 26,12 16,21 6,12" fill="none" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="3" fill="#e04040"/></svg>UAV</button>
-    </div>
-
-    <div class="sec-title">Прочее</div>
-    <div class="sym-grid">
-      <button class="sym-btn" data-symbol="contam"       onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="#ffd966" stroke="#e04040" stroke-width="1.2" opacity=".5"/><text x="16" y="15" text-anchor="middle" font-size="10" fill="#e04040" font-weight="bold">G</text></svg>Contam</button>
-      <button class="sym-btn" data-symbol="installation" onclick="setTool('symbol',this)"><svg viewBox="0 0 32 24"><rect x="4" y="4" width="24" height="16" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="4" y1="12" x2="28" y2="12" stroke="#e04040" stroke-width="1"/><line x1="16" y1="4" x2="16" y2="20" stroke="#e04040" stroke-width="1"/></svg>Install</button>
-    </div>
-
     <div class="sec-title">Цвет</div>
     <div class="color-row">
       <label>Союзник:</label><input type="color" id="colorFriendly" value="#e04040">
@@ -1942,6 +1910,32 @@ function drawRubberBand(sx,sy,ex,ey){
 // ─── DOUBLE CLICK FOR LABELS ─────────────────────────────────────────────
 let labelMenu = null;
 
+// Определение всех доступных символов с их SVG
+const symbolDefinitions = {
+  'tank': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="6" y1="8" x2="26" y2="8" stroke="#e04040" stroke-width="1"/><line x1="6" y1="16" x2="26" y2="16" stroke="#e04040" stroke-width="1"/><rect x="12" y="4" width="8" height="4" fill="none" stroke="#e04040" stroke-width="1" rx="1"/></svg>',
+  'armour': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="8" y1="6" x2="24" y2="18" stroke="#e04040" stroke-width="1.2"/><line x1="24" y1="6" x2="8" y2="18" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'infantry': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="10" y1="6" x2="22" y2="18" stroke="#e04040" stroke-width="1.2"/><line x1="22" y1="6" x2="10" y2="18" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'motorized': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><circle cx="16" cy="12" r="6" fill="none" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="2" fill="#e04040"/></svg>',
+  'mech_inf': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="10" y1="6" x2="22" y2="18" stroke="#e04040" stroke-width="1.2"/><line x1="22" y1="6" x2="10" y2="18" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="3" fill="none" stroke="#e04040" stroke-width="1"/></svg>',
+  'arty': '<svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="3" y1="12" x2="29" y2="12" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'missile': '<svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="3" y1="12" x2="29" y2="12" stroke="#e04040" stroke-width="1.2"/><line x1="16" y1="3" x2="16" y2="21" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'hq': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="4" y1="4" x2="4" y2="20" stroke="#e04040" stroke-width="1"/><line x1="4" y1="4" x2="16" y2="4" stroke="#e04040" stroke-width="1"/><line x1="16" y1="4" x2="16" y2="10" stroke="#e04040" stroke-width="1"/></svg>',
+  'recon': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><circle cx="16" cy="12" r="6" fill="none" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="2" fill="#e04040"/></svg>',
+  'atgm': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="8" y1="12" x2="24" y2="12" stroke="#e04040" stroke-width="1.5"/><polygon points="24,9 29,12 24,15" fill="#e04040"/></svg>',
+  'sam': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="16" y1="6" x2="16" y2="18" stroke="#e04040" stroke-width="1.5"/><line x1="10" y1="12" x2="22" y2="12" stroke="#e04040" stroke-width="1.5"/></svg>',
+  'engineer': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="8" y1="8" x2="16" y2="16" stroke="#e04040" stroke-width="1.5"/><line x1="16" y1="8" x2="24" y2="16" stroke="#e04040" stroke-width="1.5"/><line x1="16" y1="16" x2="16" y2="20" stroke="#e04040" stroke-width="1.5"/></svg>',
+  'medical': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><line x1="16" y1="6" x2="16" y2="18" stroke="#e04040" stroke-width="2"/><line x1="10" y1="12" x2="22" y2="12" stroke="#e04040" stroke-width="2"/></svg>',
+  'mortar': '<svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="16" y1="3" x2="16" y2="21" stroke="#e04040" stroke-width="1.5"/><line x1="12" y1="12" x2="20" y2="12" stroke="#e04040" stroke-width="1.5"/></svg>',
+  'support': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><circle cx="16" cy="12" r="5" fill="none" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'maint': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><polygon points="16,6 22,12 16,18 10,12" fill="none" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'ew': '<svg viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" fill="none" stroke="#e04040" stroke-width="1.2" rx="1"/><path d="M8 12 Q10 6 12 12 Q14 18 16 12 Q18 6 20 12 Q22 18 24 12" fill="none" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'uav': '<svg viewBox="0 0 32 24"><polygon points="16,3 26,12 16,21 6,12" fill="none" stroke="#e04040" stroke-width="1.2"/><circle cx="16" cy="12" r="3" fill="#e04040"/></svg>',
+  'contam': '<svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="13" ry="9" fill="#ffd966" stroke="#e04040" stroke-width="1.2" opacity=".5"/><text x="16" y="15" text-anchor="middle" font-size="10" fill="#e04040" font-weight="bold">G</text></svg>',
+  'installation': '<svg viewBox="0 0 32 24"><rect x="4" y="4" width="24" height="16" fill="none" stroke="#e04040" stroke-width="1.2"/><line x1="4" y1="12" x2="28" y2="12" stroke="#e04040" stroke-width="1"/><line x1="16" y1="4" x2="16" y2="20" stroke="#e04040" stroke-width="1"/></svg>',
+  'mine': '<svg viewBox="0 0 32 24"><path d="M4 12 L28 12 M8 4 L8 20 M24 4 L24 20" stroke="#e04040" stroke-width="1.5" stroke-dasharray="3,2"/><circle cx="16" cy="12" r="4" fill="none" stroke="#e04040" stroke-width="1.2"/></svg>',
+  'trench': '<svg viewBox="0 0 32 24"><path d="M2 12 Q6 6 10 12 T18 12 T26 12 T30 12" fill="none" stroke="#e04040" stroke-width="1.5"/></svg>'
+};
+
 function createLabelMenu() {
   if (labelMenu) return;
   labelMenu = document.createElement('div');
@@ -1950,41 +1944,34 @@ function createLabelMenu() {
     position:absolute;display:none;z-index:1000;
     background:rgba(23,23,42,.98);border:1px solid var(--border);
     border-radius:8px;padding:8px;box-shadow:var(--shadow);
-    min-width:200px;backdrop-filter:blur(8px);
+    min-width:280px;backdrop-filter:blur(8px);
   `;
   
   const title = document.createElement('div');
-  title.textContent = 'Выберите метку';
+  title.textContent = 'Выберите символ';
   title.style.cssText = 'font-size:11px;color:var(--accent);margin-bottom:6px;font-weight:600;';
   labelMenu.appendChild(title);
   
-  const select = document.createElement('select');
-  select.id = 'labelSelect';
-  select.style.cssText = `
-    width:100%;background:rgba(255,255,255,.07);
-    border:1px solid var(--border);color:var(--text);
-    padding:6px 8px;border-radius:4px;font-size:11px;
-    outline:none;margin-bottom:8px;
-  `;
+  // Создаем сетку для иконок символов
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:4px;max-height:320px;overflow-y:auto;padding:2px;';
   
-  const labels = [
-    '', 'Атака', 'Оборона', 'Отход', 'Резерв', 
-    'Наблюдение', 'Огневая точка', 'КП', 'Склад',
-    'Минное поле', 'Траншея', 'Блокпост', 'ДЗОТ',
-    'Артиллерия', 'ПВО', 'Разведка', 'Медпункт'
-  ];
-  
-  labels.forEach(lbl => {
-    const opt = document.createElement('option');
-    opt.value = lbl;
-    opt.textContent = lbl || '(нет)';
-    select.appendChild(opt);
+  // Добавляем все символы в сетку
+  Object.keys(symbolDefinitions).forEach(symKey => {
+    const btn = document.createElement('button');
+    btn.className = 'sym-btn';
+    btn.style.cssText = 'padding:4px;border-radius:4px;cursor:pointer;background:rgba(255,255,255,.05);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;transition:.12s;';
+    btn.onmouseover = () => btn.style.background = 'var(--accent-dim)';
+    btn.onmouseout = () => btn.style.background = 'rgba(255,255,255,.05)';
+    btn.innerHTML = symbolDefinitions[symKey];
+    btn.onclick = () => placeSymbolAtCursor(symKey);
+    grid.appendChild(btn);
   });
   
-  labelMenu.appendChild(select);
+  labelMenu.appendChild(grid);
   
-  const btnRow = document.createElement('div');
-  btnRow.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;';
+  const cancelRow = document.createElement('div');
+  cancelRow.style.cssText = 'display:flex;justify-content:flex-end;margin-top:6px;';
   
   const cancelBtn = document.createElement('button');
   cancelBtn.textContent = 'Отмена';
@@ -1994,59 +1981,51 @@ function createLabelMenu() {
     font-size:11px;cursor:pointer;
   `;
   cancelBtn.onclick = hideLabelMenu;
+  cancelRow.appendChild(cancelBtn);
   
-  const okBtn = document.createElement('button');
-  okBtn.textContent = 'OK';
-  okBtn.style.cssText = `
-    background:var(--accent);border:none;color:#17172a;
-    padding:5px 12px;border-radius:4px;font-size:11px;
-    cursor:pointer;font-weight:600;
-  `;
-  okBtn.onclick = applyLabelFromMenu;
-  
-  btnRow.appendChild(cancelBtn);
-  btnRow.appendChild(okBtn);
-  labelMenu.appendChild(btnRow);
+  labelMenu.appendChild(cancelRow);
   
   document.body.appendChild(labelMenu);
 }
 
-function showLabelMenu(x, y, currentLabel) {
+function showLabelMenu(x, y) {
   createLabelMenu();
-  const select = document.getElementById('labelSelect');
-  select.value = currentLabel || '';
   labelMenu.style.left = x + 'px';
   labelMenu.style.top = y + 'px';
   labelMenu.style.display = 'block';
   labelMenu.dataset.targetX = x;
   labelMenu.dataset.targetY = y;
-  select.focus();
 }
 
 function hideLabelMenu() {
   if (labelMenu) labelMenu.style.display = 'none';
 }
 
-function applyLabelFromMenu() {
+function placeSymbolAtCursor(symbolType) {
   if (!labelMenu || labelMenu.style.display === 'none') return;
-  const select = document.getElementById('labelSelect');
-  const label = select.value.trim();
+  
   const targetX = parseFloat(labelMenu.dataset.targetX);
   const targetY = parseFloat(labelMenu.dataset.targetY);
+  const screenX = parseFloat(labelMenu.dataset.screenX || targetX);
+  const screenY = parseFloat(labelMenu.dataset.screenY || targetY);
   
-  // Создаем текстовую метку в указанной позиции
+  // Преобразуем экранные координаты обратно в мировые
+  const rect = canvasArea.getBoundingClientRect();
+  const worldX = (screenX - rect.left - panX) / zoom;
+  const worldY = (screenY - rect.top - panY) / zoom;
+  
   saveHistory();
   const id = nextId++;
   const color = getColor();
-  const data = { x: targetX, y: targetY, text: label, color, scale: 1 };
-  const g = buildTextNote(data, color);
+  const data = { symbol: symbolType, x: worldX, y: worldY, color, scale: 1 };
+  const g = buildSymbol(symbolType, { x: worldX, y: worldY }, color, 1);
   registerEl(g, id);
   elemGroup.appendChild(g);
-  elements.push({ id, type: 'text', data, el: g });
+  elements.push({ id, type: 'symbol', data, el: g });
   
   hideLabelMenu();
   updateStatus();
-  showToast(`Метка "${label || '(пусто)'}" добавлена`, 'success');
+  showToast(`Символ добавлен`, 'success');
 }
 
 function onDblClick(e){
@@ -2067,9 +2046,11 @@ function onDblClick(e){
     return;
   }
   
-  // Двойной клик по пустому месту - создание метки через меню
+  // Двойной клик по пустому месту - создание символа через меню
   createLabelMenu();
-  showLabelMenu(e.clientX, e.clientY, '');
+  labelMenu.dataset.screenX = e.clientX;
+  labelMenu.dataset.screenY = e.clientY;
+  showLabelMenu(e.clientX, e.clientY);
 }
 
 function onWheel(e){
