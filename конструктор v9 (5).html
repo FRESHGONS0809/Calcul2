@@ -356,11 +356,23 @@ function showExportDialog(){
 }
 
 function downloadBlob(blob,filename){
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download=filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(url),500);
+  console.log('downloadBlob called with filename:', filename, 'blob size:', blob.size);
+  try {
+    const url=URL.createObjectURL(blob);
+    console.log('Object URL created:', url);
+    const a=document.createElement('a');
+    a.href=url; a.download=filename;
+    console.log('Anchor element created, href:', a.href, 'download:', a.download);
+    document.body.appendChild(a);
+    a.click();
+    console.log('Click triggered on anchor');
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),500);
+    console.log('Download completed successfully');
+  } catch(err) {
+    console.error('Error in downloadBlob:', err);
+    throw err;
+  }
 }
 function safeStamp(){
   return new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
@@ -1011,10 +1023,12 @@ canvasArea.addEventListener('drop',e=>{ e.preventDefault(); for(const file of e.
 function cloneData(v){ return JSON.parse(JSON.stringify(v)); }
 
 function serializeProject(){
+  console.log('Serializing project...');
   // Save current sheet state before serializing
   saveCurrentSheetState();
+  console.log('Current sheets after save:', sheets);
   
-  return {
+  const result = {
     app: 'combat-operations-constructor',
     version: 2,
     timestamp: new Date().toISOString(),
@@ -1027,25 +1041,35 @@ function serializeProject(){
     sheets: sheets.map(sheet => ({
       id: sheet.id,
       name: sheet.name,
-      elements: sheet.elements,
-      images: sheet.images,
-      panX: sheet.panX,
-      panY: sheet.panY,
-      zoom: sheet.zoom
+      elements: sheet.elements || [],
+      images: sheet.images || [],
+      panX: sheet.panX || 0,
+      panY: sheet.panY || 0,
+      zoom: sheet.zoom || 1
     })),
     currentSheetId,
     nextId,
     imgNextId
   };
+  console.log('Serialization complete, sheets count:', result.sheets.length);
+  return result;
 }
 
 function saveProject(){
   try {
+    console.log('Starting project save...');
     const project=serializeProject();
+    console.log('Serialized project:', project);
     // Save redoStack as well
     project.redoStack = redoStack;
-    const blob=new Blob([JSON.stringify(project,null,2)],{type:'application/json;charset=utf-8'});
-    downloadBlob(blob,`combat_plan_${safeStamp()}.json`);
+    const jsonString = JSON.stringify(project,null,2);
+    console.log('JSON string length:', jsonString.length);
+    const blob=new Blob([jsonString],{type:'application/json;charset=utf-8'});
+    console.log('Blob created, size:', blob.size);
+    const filename = `combat_plan_${safeStamp()}.json`;
+    console.log('Filename:', filename);
+    downloadBlob(blob,filename);
+    console.log('Download triggered');
     
     // Count total elements and images across all sheets
     let totalElements = 0;
@@ -2486,8 +2510,10 @@ function exportPNG(scaleOverride){
 
 // Initialize first sheet
 function initSheets() {
-  sheets = [{ id: 1, name: 'Лист 1', elements: [], images: [] }];
+  console.log('Initializing sheets...');
+  sheets = [{ id: 1, name: 'Лист 1', elements: [], images: [], panX: 0, panY: 0, zoom: 1 }];
   currentSheetId = 1;
+  console.log('Initial sheets:', sheets);
   renderSheetTabs();
 }
 
