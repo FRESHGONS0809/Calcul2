@@ -21,7 +21,7 @@
   --shadow: 0 14px 40px rgba(0,0,0,.32);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none}
 .app{display:flex;height:100vh}
 
 .sidebar{width:294px;min-width:294px;background:linear-gradient(180deg,var(--panel),#121224);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
@@ -119,13 +119,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <div class="sidebar-header">⚔ КОНСТРУКТОР ОПЕРАЦИЙ</div>
   <div class="sidebar-scroll">
 
-    <div class="sec-title">Карта</div>
-    <button class="act-btn" onclick="document.getElementById('fileInput').click()"><span class="icon">📁</span> Загрузить изображение</button>
-    <button class="act-btn" onclick="pasteFromClipboard()"><span class="icon">📋</span> Вставить из буфера</button>
+    <div class="sec-title">Файл</div>
+    <button class="act-btn" onclick="toggleFileMenu()"><span class="icon">📁</span> Файл</button>
+    <div id="fileMenu" style="display:none;position:absolute;left:294px;top:32px;background:rgba(23,23,42,.98);border:1px solid var(--border);border-radius:6px;padding:4px 0;box-shadow:var(--shadow);z-index:100;min-width:200px;">
+      <button class="act-btn" onclick="document.getElementById('fileInput').click();toggleFileMenu()" style="border-left:none;border-radius:0;"><span class="icon">🖼</span> Загрузить изображение</button>
+      <button class="act-btn" onclick="pasteFromClipboard();toggleFileMenu()" style="border-left:none;border-radius:0;"><span class="icon">📋</span> Вставить из буфера</button>
+      <div class="divider"></div>
+      <button class="act-btn" onclick="saveProject();toggleFileMenu()" style="border-left:none;border-radius:0;"><span class="icon">💾</span> Сохранить проект</button>
+      <button class="act-btn" onclick="document.getElementById('projectInput').click();toggleFileMenu()" style="border-left:none;border-radius:0;"><span class="icon">📂</span> Загрузить проект</button>
+    </div>
     <div class="divider"></div>
-    <button class="act-btn" onclick="saveProject()"><span class="icon">💾</span> Сохранить проект</button>
-    <button class="act-btn" onclick="document.getElementById('projectInput').click()"><span class="icon">📂</span> Загрузить проект</button>
-    <input type="file" id="projectInput" accept=".json,.txt" style="display:none" onchange="loadProject(this)">
 
     <div class="sec-title">Инструменты</div>
     <button class="act-btn tool-btn" data-tool="marker"          onclick="setTool('marker')"><span class="icon">🖍</span> Маркер</button>
@@ -184,18 +187,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 
   <div class="sidebar-footer">
-    <div class="export-row">
-      <span>Качество PNG</span>
-      <select id="exportScale">
-        <option value="1">1x</option>
-        <option value="2" selected>2x</option>
-        <option value="3">3x</option>
-        <option value="4">4x</option>
-      </select>
-    </div>
     <button class="act-btn" onclick="undoAction()"><span class="icon">↩</span> Отменить (Ctrl+Z)</button>
+    <button class="act-btn" onclick="redoAction()"><span class="icon">↪</span> Вперед (Ctrl+Y)</button>
     <button class="act-btn" onclick="clearAll()"><span class="icon">🗑</span> Очистить всё</button>
-    <button class="act-btn" onclick="exportPNG()"><span class="icon">💾</span> Экспорт PNG</button>
+    <button class="act-btn" onclick="showExportDialog()"><span class="icon">💾</span> Экспорт PNG</button>
     <button class="act-btn" onclick="exportSVG()"><span class="icon">▣</span> Экспорт SVG</button>
   </div>
 </div>
@@ -407,7 +402,7 @@ const zoomResponsiveTypes = new Set(['flex-arrow','flex-arrow-dash','mine','tren
 
 // State accessors for backward compatibility
 let currentTool = 'select', currentSymbol = null, activeForce = 'friendly';
-let elements = [], selectedIds = new Set(), history = [], nextId = 1;
+let elements = [], selectedIds = new Set(), history = [], historyIndex = -1, nextId = 1;
 let panX = 0, panY = 0, zoom = 1;
 let isPanning = false, panStartX = 0, panStartY = 0;
 let isDrawing = false, drawPts = [], lastAddedPt = null;
@@ -1622,18 +1617,21 @@ function updateLabel(elData){
 
 // ─── HISTORY ─────────────────────────────────────────────────────────────
 function saveHistory(){
+  historyIndex++;
+  if(historyIndex < history.length) history.splice(historyIndex);
   history.push({
     elements: elements.map(el=>({id:el.id,type:el.type,data:cloneData(el.data),label:el.el.dataset.label||''})),
     images: images.map(im=>({id:im.id,dataUrl:im.dataUrl,cx:im.cx,cy:im.cy,w:im.w,h:im.h,origW:im.origW,origH:im.origH})),
     nextId,
     imgNextId
   });
-  if(history.length>60) history.shift();
+  if(history.length>60) history.shift(), historyIndex--;
 }
 
 function undoAction(){
-  if(!history.length) return;
-  const snap = history.pop(); 
+  if(historyIndex < 0) return;
+  const snap = history[historyIndex];
+  historyIndex--;
   // Clear DOM properly
   while(elemGroup.firstChild) elemGroup.removeChild(elemGroup.firstChild);
   while(imgGrp.firstChild) imgGrp.removeChild(imgGrp.firstChild);
@@ -1659,6 +1657,37 @@ function undoAction(){
   updateImageInteractivity(); 
   updateTransform();
   showToast('Действие отменено', 'success');
+}
+
+function redoAction(){
+  if(historyIndex >= history.length - 1) return;
+  historyIndex++;
+  const snap = history[historyIndex];
+  // Clear DOM properly
+  while(elemGroup.firstChild) elemGroup.removeChild(elemGroup.firstChild);
+  while(imgGrp.firstChild) imgGrp.removeChild(imgGrp.firstChild);
+  elements = []; 
+  images = [];
+  // Clear wide arrow masks to prevent memory leaks
+  clearWideArrowMasks();
+  
+  const snapElements = Array.isArray(snap) ? snap : (snap.elements || []);
+  snapElements.forEach(s => { 
+    const data = cloneData(s.data || {}), 
+    el = spawnEl({...s, data}); 
+    elements.push({id: s.id, type: s.type, data, el}); 
+  });
+  if(!Array.isArray(snap) && (snap.images || []).length){
+    (snap.images || []).forEach(restoreImage);
+  }
+  nextId = (!Array.isArray(snap) && snap.nextId) || (elements.length ? Math.max(...elements.map(e => e.id)) + 1 : 1);
+  imgNextId = (!Array.isArray(snap) && snap.imgNextId) || (images.length ? Math.max(...images.map(i => i.id)) + 1 : 1);
+  clearSelection(); 
+  deselectImages();
+  lastDecorZoom = null;
+  updateImageInteractivity(); 
+  updateTransform();
+  showToast('Действие возвращено', 'success');
 }
 
 function spawnEl(s){
@@ -2114,12 +2143,13 @@ function onKeyDown(e){
   if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
   if((e.key==='Delete'||e.key==='Backspace')&&!e.ctrlKey){ e.preventDefault(); deleteSelected(); return; }
   if(e.ctrlKey&&e.key==='z'){ e.preventDefault(); undoAction(); return; }
+  if(e.ctrlKey&&e.key==='y'){ e.preventDefault(); redoAction(); return; }
   if(e.ctrlKey&&e.key==='a'){ e.preventDefault(); elements.forEach(el=>selectedIds.add(el.id)); drawSelBox(); return; }
   if(e.ctrlKey&&e.key==='d'){ e.preventDefault(); duplicateSelected(); return; }
   if(e.key==='Escape'){ setTool('select'); return; }
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)&&selectedIds.size){
     e.preventDefault();
-    const step=(e.shiftKey?10:1)/zoom;
+    const step=(e.shiftKey?20:5)/zoom;
     const dx=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0;
     const dy=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;
     saveHistory();
@@ -2263,6 +2293,18 @@ function exportSVG(){
   showToast('SVG экспортирован','success');
 }
 
+function showExportDialog(){
+  const scale = prompt('Выберите качество экспорта (1, 2, 3 или 4):', '2');
+  if(scale === null) return;
+  const numScale = parseInt(scale, 10);
+  if(![1,2,3,4].includes(numScale)){
+    showToast('Неверное значение. Используйте 1, 2, 3 или 4.', 'error');
+    return;
+  }
+  document.getElementById('exportScale').value = String(numScale);
+  exportPNG();
+}
+
 function exportPNG(){
   const {source,outW,outH,scale,requested}=exportSource(undefined,true);
   const url=URL.createObjectURL(new Blob([source],{type:'image/svg+xml;charset=utf-8'}));
@@ -2288,6 +2330,17 @@ function exportPNG(){
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
+function toggleFileMenu(){
+  const menu = document.getElementById('fileMenu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e){
+  const menu = document.getElementById('fileMenu');
+  if(!e.target.closest('#fileMenu') && !e.target.closest('[onclick*="toggleFileMenu"]')){
+    menu.style.display = 'none';
+  }
+});
+
 ['colorFriendly','colorEnemy'].forEach(id=>{
   document.getElementById(id).addEventListener('input',()=>{
     setForceSide(activeForce);
