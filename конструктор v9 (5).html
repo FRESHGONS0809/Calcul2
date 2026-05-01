@@ -2585,6 +2585,16 @@ function switchToSheet(sheetId) {
   const sheet = sheets.find(s => s.id === sheetId);
   if (!sheet) return;
   
+  // Reset drawing and interaction states
+  isPanning = false;
+  isDrawing = false;
+  imgDrag = null;
+  dragState = null;
+  resizeState = null;
+  rubberState = null;
+  drawPts = [];
+  lastAddedPt = null;
+  
   // Load sheet data
   elements = [...sheet.elements];
   images = [...sheet.images];
@@ -2602,7 +2612,35 @@ function switchToSheet(sheetId) {
   images = [];
   
   // Restore images
-  sheet.images.forEach(restoreImage);
+  sheet.images.forEach(imgData => {
+    const img = new Image();
+    img.onload = () => {
+      const svgImg = NS('image');
+      svgImg.setAttribute('href', imgData.dataUrl);
+      svgImg.setAttribute('width', imgData.w);
+      svgImg.setAttribute('height', imgData.h);
+      svgImg.setAttribute('x', imgData.cx - imgData.w/2);
+      svgImg.setAttribute('y', imgData.cy - imgData.h/2);
+      svgImg.setAttribute('preserveAspectRatio', 'none');
+      
+      const obj = {
+        id: imgData.id,
+        origW: imgData.origW,
+        origH: imgData.origH,
+        cx: imgData.cx,
+        cy: imgData.cy,
+        w: imgData.w,
+        h: imgData.h,
+        el: svgImg,
+        dataUrl: imgData.dataUrl
+      };
+      
+      images.push(obj);
+      imgGrp.appendChild(svgImg);
+      attachImageEvents(svgImg, obj);
+    };
+    img.src = imgData.dataUrl;
+  });
   
   // Restore elements
   elements.forEach(snap => {
@@ -2622,7 +2660,9 @@ function switchToSheet(sheetId) {
   setTool(currentTool, currentSymbol ? document.querySelector(`.sym-btn[data-symbol="${currentSymbol}"]`) : null);
   
   // Обновляем интерактивность изображений после переключения
-  updateImageInteractivity();
+  setTimeout(() => {
+    updateImageInteractivity();
+  }, 0);
   
   showToast(`Переключен на ${sheet.name}`, 'success');
 }
