@@ -2615,6 +2615,9 @@ function switchToSheet(sheetId) {
   updateStatus();
   renderSheetTabs();
   
+  // Восстанавливаем текущий инструмент и состояние canvasArea
+  setTool(currentTool, currentSymbol ? document.querySelector(`.sym-btn[data-symbol="${currentSymbol}"]`) : null);
+  
   showToast(`Переключен на ${sheet.name}`, 'success');
 }
 
