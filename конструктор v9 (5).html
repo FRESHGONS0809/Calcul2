@@ -1131,19 +1131,20 @@ function applyProject(project){
         // Create sheet content structure
         const content = { elements: [], images: [] };
         
-        // Restore images for this sheet (without adding to global images array)
+        // Restore images for this sheet
         for (const imData of sheetImgs) {
-          const imObj = restoreImageToContent(imData);
+          const imObj = restoreImage(imData);
           if (imObj) content.images.push(imObj);
         }
         
-        // Restore elements for this sheet (without adding to global elements array)
+        // Restore elements for this sheet
         for (const snap of sheetElts) {
           const data = cloneData(snap.data || {});
           const rawId = Number(snap.id);
           const id = Number.isFinite(rawId) && rawId > 0 ? rawId : nextId++;
           const g = spawnEl({id: id, type: snap.type, data: data, label: snap.label || ''});
           const elObj = {id: id, type: snap.type, data: data, el: g, label: snap.label || ''};
+          elements.push(elObj);
           content.elements.push(elObj);
         }
         
@@ -1160,8 +1161,11 @@ function applyProject(project){
       const content = { elements: [], images: [] };
       
       loadedImages.forEach(imData => {
-        const imObj = restoreImageToContent(imData);
-        if (imObj) content.images.push(imObj);
+        const imObj = restoreImage(imData);
+        if (imObj) {
+          images.push(imObj);
+          content.images.push(imObj);
+        }
       });
       
       loadedElements.forEach(snap => {
@@ -1170,6 +1174,7 @@ function applyProject(project){
         const id = Number.isFinite(rawId) && rawId > 0 ? rawId : nextId++;
         const g = spawnEl({id: id, type: snap.type, data: data, label: snap.label || ''});
         const elObj = {id: id, type: snap.type, data: data, el: g, label: snap.label || ''};
+        elements.push(elObj);
         content.elements.push(elObj);
       });
       
@@ -1834,7 +1839,7 @@ function loadSheetContent(sheetId) {
   
   // Restore images
   for (const imData of content.images) {
-    const imObj = restoreImageToContent({
+    const imObj = restoreImage({
       id: imData.id,
       dataUrl: imData.dataUrl,
       cx: imData.cx,
