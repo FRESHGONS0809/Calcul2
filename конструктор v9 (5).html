@@ -67,7 +67,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .canvas-area.tool-pan svg{cursor:grab}
 .canvas-area.panning svg{cursor:grabbing}
 
-.topbar{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:3px;background:rgba(23,23,42,.95);border:1px solid var(--border);border-radius:8px;padding:3px;backdrop-filter:blur(8px);box-shadow:var(--shadow)}
+/* Sheets panel */
+.sheets-panel{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:3px;background:rgba(23,23,42,.95);border:1px solid var(--border);border-radius:8px;padding:3px;backdrop-filter:blur(8px);box-shadow:var(--shadow);max-width:min(90vw,1200px);overflow-x:auto;overflow-y:hidden}
+.sheets-panel::-webkit-scrollbar{height:4px}
+.sheets-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sheets-panel::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+.sheet-btn{border-radius:5px;padding:5px 11px;font-size:11px;border:none;background:transparent;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:.12s;border-left:2px solid transparent}
+.sheet-btn:hover{background:rgba(255,255,255,.07);color:#fff}
+.sheet-btn.active{background:linear-gradient(90deg,var(--accent-dim),rgba(240,192,64,.05));border-left-color:var(--accent);color:var(--accent)}
+.sheet-add-btn{border-radius:5px;padding:5px 9px;font-size:13px;border:none;background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;width:26px;flex-shrink:0;transition:.12s}
+.sheet-add-btn:hover{background:var(--accent-dim);color:var(--accent)}
+.sheet-del-btn{opacity:.5;font-size:14px;line-height:1;padding:0 2px;border-radius:3px;transition:.12s}
+.sheet-del-btn:hover{opacity:1;background:rgba(255,80,80,.15);color:#ff6060}
+
+.topbar{position:absolute;top:60px;left:50%;transform:translateX(-50%);display:flex;gap:3px;background:rgba(23,23,42,.95);border:1px solid var(--border);border-radius:8px;padding:3px;backdrop-filter:blur(8px);box-shadow:var(--shadow)}
 .topbar .act-btn{border-radius:5px;padding:5px 11px;font-size:11px;border-left:none}
 
 .zoom-wrap{position:absolute;bottom:36px;right:14px;display:flex;flex-direction:column;gap:3px}
@@ -208,6 +221,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <g id="previewGroup"></g>
   </svg>
 
+  <div class="sheets-panel" id="sheetsPanel">
+    <button class="sheet-btn active" id="sheet1Btn" onclick="switchToSheet(1)"><span>Лист 1</span><span class="sheet-del-btn" onclick="event.stopPropagation();deleteSheet(1)">×</span></button>
+    <button class="sheet-add-btn" onclick="addNewSheet()" title="Добавить лист">+</button>
+  </div>
+
   <div class="topbar">
     <button class="act-btn" id="topSelectBtn" onclick="setTool('select')"><span class="icon">🖱</span> Выбор</button>
     <button class="act-btn" id="topPanBtn"    onclick="setTool('pan')"><span class="icon">✋</span> Перемещение</button>
@@ -254,6 +272,10 @@ const zoomLbl      = document.getElementById('zoomLbl');
 const coordDisplay = document.getElementById('coordDisplay');
 const statusDisplay= document.getElementById('statusDisplay');
 const toastEl      = document.getElementById('toast');
+const sheetsPanel  = document.getElementById('sheetsPanel');
+
+// Sheet content storage: { elements:[], images:[] } per sheet
+const sheetContent = new Map();
 
 // ─── UTILITIES ─────────────────────────────────────────────────────────────
 function NS(tag){ return document.createElementNS('http://www.w3.org/2000/svg', tag); }
@@ -286,7 +308,9 @@ function toolName(tool){
   return names[tool]||tool;
 }
 function updateStatus(){
-  statusDisplay.textContent=`${toolName(currentTool)} · ${getForceName()} · ${elements.length} эл. · ${images.length} карт.`;
+  const totalEls = Array.from(sheetContent.values()).reduce((sum, c) => sum + c.elements.length, 0);
+  const totalImgs = Array.from(sheetContent.values()).reduce((sum, c) => sum + c.images.length, 0);
+  statusDisplay.textContent=`${toolName(currentTool)} · ${getForceName()} · ${totalEls} эл. · ${totalImgs} карт (${sheetContent.size} листа)`;
 }
 let toastTimer=null;
 function showToast(text,type){
@@ -372,7 +396,11 @@ const AppState = {
   selectedImgId: null,
   imgDrag: null,
   lastDecorZoom: null,
-  uidSeq: 1
+  uidSeq: 1,
+  // Sheets support
+  sheets: [],
+  currentSheetId: 1,
+  sheetNextId: 2
 };
 
 const zoomResponsiveTypes = new Set(['flex-arrow','flex-arrow-dash','mine','trench','boundary','measure','text']);
@@ -388,6 +416,8 @@ let symPreview = null;
 let images = [], imgNextId = 1, selectedImgId = null, imgDrag = null;
 let lastDecorZoom = null;
 let uidSeq = 1;
+// Sheets state
+let sheets = [], currentSheetId = 1, sheetNextId = 2;
 
 // Sync state with AppState
 function syncState() {
@@ -417,6 +447,9 @@ function syncState() {
   imgDrag = AppState.imgDrag;
   lastDecorZoom = AppState.lastDecorZoom;
   uidSeq = AppState.uidSeq;
+  sheets = AppState.sheets;
+  currentSheetId = AppState.currentSheetId;
+  sheetNextId = AppState.sheetNextId;
 }
 
 function updateAppState() {
@@ -446,6 +479,9 @@ function updateAppState() {
   AppState.imgDrag = imgDrag;
   AppState.lastDecorZoom = lastDecorZoom;
   AppState.uidSeq = uidSeq;
+  AppState.sheets = sheets;
+  AppState.currentSheetId = currentSheetId;
+  AppState.sheetNextId = sheetNextId;
 }
 
 // ─── WIDE ARROW CORE ─────────────────────────────────────────────────────
@@ -928,6 +964,9 @@ canvasArea.addEventListener('drop',e=>{ e.preventDefault(); for(const file of e.
 function cloneData(v){ return JSON.parse(JSON.stringify(v)); }
 
 function serializeProject(){
+  // Save current sheet content before serializing
+  saveCurrentSheetContent();
+  
   return {
     app: 'combat-operations-constructor',
     version: 2,
@@ -938,24 +977,29 @@ function serializeProject(){
       colorFriendly: document.getElementById('colorFriendly').value,
       colorEnemy: document.getElementById('colorEnemy').value
     },
-    elements: elements.map(el => ({
-      id: el.id,
-      type: el.type,
-      data: cloneData(el.data),
-      label: el.el.dataset.label || ''
+    sheets: Array.from(sheetContent.entries()).map(([sheetId, content]) => ({
+      id: sheetId,
+      elements: content.elements.map(el => ({
+        id: el.id,
+        type: el.type,
+        data: cloneData(el.data),
+        label: el.el ? (el.el.dataset.label || '') : (el.label || '')
+      })),
+      images: content.images.map(im => ({
+        id: im.id,
+        dataUrl: im.dataUrl,
+        cx: im.cx,
+        cy: im.cy,
+        w: im.w,
+        h: im.h,
+        origW: im.origW,
+        origH: im.origH
+      }))
     })),
-    images: images.map(im => ({
-      id: im.id,
-      dataUrl: im.dataUrl,
-      cx: im.cx,
-      cy: im.cy,
-      w: im.w,
-      h: im.h,
-      origW: im.origW,
-      origH: im.origH
-    })),
+    currentSheetId,
     nextId,
-    imgNextId
+    imgNextId,
+    sheetNextId
   };
 }
 
@@ -963,7 +1007,9 @@ function saveProject(){
   const project=serializeProject();
   const blob=new Blob([JSON.stringify(project,null,2)],{type:'application/json;charset=utf-8'});
   downloadBlob(blob,`combat_plan_${safeStamp()}.json`);
-  showToast(`Проект сохранен: ${project.elements.length} элементов, ${project.images.length} карт`,'success');
+  const totalEls = project.sheets.reduce((sum, s) => sum + s.elements.length, 0);
+  const totalImgs = project.sheets.reduce((sum, s) => sum + s.images.length, 0);
+  showToast(`Проект сохранен: ${totalEls} элементов, ${totalImgs} карт на ${project.sheets.length} листах`,'success');
 }
 
 function restoreImage(imData){
@@ -1030,9 +1076,6 @@ function applyProject(project){
     // Validate and sanitize project data
     project = validateProject(project);
     
-    const loadedElements = Array.isArray(project.elements) ? project.elements : [];
-    const loadedImages = Array.isArray(project.images) ? project.images : [];
-
     // Clear DOM properly
     while(elemGroup.firstChild) elemGroup.removeChild(elemGroup.firstChild);
     while(imgGrp.firstChild) imgGrp.removeChild(imgGrp.firstChild);
@@ -1063,15 +1106,63 @@ function applyProject(project){
     if(Number.isFinite(savedExportScale)) document.getElementById('exportScale').value = String(clamp(savedExportScale, 1, 4));
     activeForce = s.activeForce === 'enemy' ? 'enemy' : 'friendly';
 
-    loadedImages.forEach(restoreImage);
-    loadedElements.forEach(snap => {
-      const data = cloneData(snap.data || {});
-      const rawId = Number(snap.id);
-      const id = Number.isFinite(rawId) && rawId > 0 ? rawId : nextId++;
-      const g = spawnEl({id: id, type: snap.type, data: data, label: snap.label || ''});
-      elements.push({id: id, type: snap.type, data: data, el: g});
-    });
-
+    // Handle sheets (new format) or legacy single-sheet format
+    sheetContent.clear();
+    if (project.sheets && Array.isArray(project.sheets) && project.sheets.length > 0) {
+      // Load all sheets
+      for (const sheetData of project.sheets) {
+        const sheetId = sheetData.id;
+        const sheetElts = Array.isArray(sheetData.elements) ? sheetData.elements : [];
+        const sheetImgs = Array.isArray(sheetData.images) ? sheetData.images : [];
+        
+        // Create sheet content structure
+        const content = { elements: [], images: [] };
+        
+        // Restore images for this sheet
+        for (const imData of sheetImgs) {
+          const imObj = restoreImage(imData);
+          if (imObj) content.images.push(imObj);
+        }
+        
+        // Restore elements for this sheet
+        for (const snap of sheetElts) {
+          const data = cloneData(snap.data || {});
+          const rawId = Number(snap.id);
+          const id = Number.isFinite(rawId) && rawId > 0 ? rawId : nextId++;
+          const g = spawnEl({id: id, type: snap.type, data: data, label: snap.label || ''});
+          const elObj = {id: id, type: snap.type, data: data, el: g, label: snap.label || ''};
+          content.elements.push(elObj);
+        }
+        
+        sheetContent.set(sheetId, content);
+      }
+      
+      currentSheetId = project.currentSheetId || project.sheets[0].id;
+      sheetNextId = project.sheetNextId || (Math.max(...project.sheets.map(s => s.id)) + 1);
+    } else {
+      // Legacy format - load into sheet 1
+      const loadedElements = Array.isArray(project.elements) ? project.elements : [];
+      const loadedImages = Array.isArray(project.images) ? project.images : [];
+      
+      const content = { elements: [], images: [] };
+      
+      loadedImages.forEach(restoreImage);
+      images.forEach(im => content.images.push(im));
+      
+      loadedElements.forEach(snap => {
+        const data = cloneData(snap.data || {});
+        const rawId = Number(snap.id);
+        const id = Number.isFinite(rawId) && rawId > 0 ? rawId : nextId++;
+        const g = spawnEl({id: id, type: snap.type, data: data, label: snap.label || ''});
+        const elObj = {id: id, type: snap.type, data: data, el: g, label: snap.label || ''};
+        content.elements.push(elObj);
+      });
+      
+      sheetContent.set(1, content);
+      currentSheetId = 1;
+      sheetNextId = 2;
+    }
+    
     const maxElId = elements.length ? Math.max(...elements.map(e => e.id)) : 0;
     const maxImgId = images.length ? Math.max(...images.map(i => i.id)) : 0;
     nextId = Math.max(Number(project.nextId || 1), maxElId + 1);
@@ -1080,9 +1171,16 @@ function applyProject(project){
     setForceSide(activeForce);
     setTool('select');
     lastDecorZoom = null;
+    
+    // Render sheets UI and switch to current sheet
+    renderSheetsUI();
+    switchToSheet(currentSheetId);
+    
     updateTransform();
     
-    showToast(`Проект загружен: ${elements.length} элементов, ${images.length} карт`, 'success');
+    const totalEls = Array.from(sheetContent.values()).reduce((sum, c) => sum + c.elements.length, 0);
+    const totalImgs = Array.from(sheetContent.values()).reduce((sum, c) => sum + c.images.length, 0);
+    showToast(`Проект загружен: ${totalEls} элементов, ${totalImgs} карт на ${sheetContent.size} листах`, 'success');
   } catch(err) {
     console.error('Error applying project:', err);
     throw new Error('Ошибка применения проекта: ' + escapeHtml(err.message));
@@ -1094,7 +1192,9 @@ function loadProject(file){
   reader.onload=function(e){
     try{
       applyProject(JSON.parse(e.target.result));
-      showToast(`Проект загружен: ${elements.length} элементов, ${images.length} карт`,'success');
+      const totalEls = Array.from(sheetContent.values()).reduce((sum, c) => sum + c.elements.length, 0);
+      const totalImgs = Array.from(sheetContent.values()).reduce((sum, c) => sum + c.images.length, 0);
+      showToast(`Проект загружен: ${totalEls} элементов, ${totalImgs} карт на ${sheetContent.size} листах`,'success');
     }catch(err){
       showToast('Ошибка загрузки проекта: '+err.message,'error');
     }
@@ -1650,6 +1750,158 @@ function setTool(tool,symBtn){
   updateImageInteractivity();
   updateStatus();
   isDrawing=false; drawPts=[];
+}
+
+// ─── SHEETS MANAGEMENT ───────────────────────────────────────────────────
+
+function saveCurrentSheetContent() {
+  // Save current elements and images to sheet storage
+  const content = {
+    elements: elements.map(el => ({ ...el })),
+    images: images.map(im => ({ ...im }))
+  };
+  sheetContent.set(currentSheetId, content);
+}
+
+function loadSheetContent(sheetId) {
+  // Clear current DOM
+  while(elemGroup.firstChild) elemGroup.removeChild(elemGroup.firstChild);
+  while(imgGrp.firstChild) imgGrp.removeChild(imgGrp.firstChild);
+  while(selGrp.firstChild) selGrp.removeChild(selGrp.firstChild);
+  
+  clearWideArrowMasks();
+  
+  // Reset state
+  elements = [];
+  images = [];
+  selectedIds.clear();
+  selectedImgId = null;
+  imgDrag = null;
+  dragState = null;
+  resizeState = null;
+  
+  const content = sheetContent.get(sheetId);
+  if (!content) return;
+  
+  // Restore images
+  for (const imData of content.images) {
+    const imObj = restoreImage({
+      id: imData.id,
+      dataUrl: imData.dataUrl,
+      cx: imData.cx,
+      cy: imData.cy,
+      w: imData.w,
+      h: imData.h,
+      origW: imData.origW,
+      origH: imData.origH
+    });
+    if (imObj) images.push(imObj);
+  }
+  
+  // Restore elements
+  for (const elData of content.elements) {
+    const data = cloneData(elData.data);
+    const g = spawnEl({id: elData.id, type: elData.type, data: data, label: elData.label || ''});
+    elements.push({id: elData.id, type: elData.type, data: data, el: g, label: elData.label || ''});
+  }
+}
+
+function renderSheetsUI() {
+  // Remove all existing sheet buttons except the add button
+  const addBtn = sheetsPanel.querySelector('.sheet-add-btn');
+  sheetsPanel.innerHTML = '';
+  
+  // Sort sheets by ID
+  const sortedSheets = Array.from(sheetContent.keys()).sort((a, b) => a - b);
+  
+  for (const sheetId of sortedSheets) {
+    const btn = document.createElement('button');
+    btn.className = 'sheet-btn' + (sheetId === currentSheetId ? ' active' : '');
+    btn.id = `sheet${sheetId}Btn`;
+    btn.onclick = () => switchToSheet(sheetId);
+    
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = `Лист ${sheetId}`;
+    
+    const delSpan = document.createElement('span');
+    delSpan.className = 'sheet-del-btn';
+    delSpan.textContent = '×';
+    delSpan.onclick = (e) => { e.stopPropagation(); deleteSheet(sheetId); };
+    
+    btn.appendChild(nameSpan);
+    btn.appendChild(delSpan);
+    sheetsPanel.appendChild(btn);
+  }
+  
+  // Re-add the add button
+  sheetsPanel.appendChild(addBtn);
+}
+
+function switchToSheet(sheetId) {
+  if (sheetId === currentSheetId) return;
+  if (!sheetContent.has(sheetId)) return;
+  
+  // Save current sheet content
+  saveCurrentSheetContent();
+  
+  // Load new sheet content
+  loadSheetContent(sheetId);
+  
+  // Update UI
+  currentSheetId = sheetId;
+  renderSheetsUI();
+  
+  setTool('select');
+  updateTransform();
+  updateStatus();
+}
+
+function addNewSheet() {
+  // Save current sheet content first
+  saveCurrentSheetContent();
+  
+  const newSheetId = sheetNextId++;
+  sheetContent.set(newSheetId, { elements: [], images: [] });
+  
+  // Switch to new sheet
+  currentSheetId = newSheetId;
+  loadSheetContent(newSheetId);
+  renderSheetsUI();
+  
+  setTool('select');
+  updateTransform();
+  showToast(`Создан Лист ${newSheetId}`, 'success');
+}
+
+function deleteSheet(sheetId) {
+  if (sheetContent.size <= 1) {
+    showToast('Нельзя удалить единственный лист', 'error');
+    return;
+  }
+  
+  if (!confirm(`Удалить лист ${sheetId}?`)) return;
+  
+  // If deleting current sheet, switch to another one first
+  let newSheetId = null;
+  if (sheetId === currentSheetId) {
+    const otherIds = Array.from(sheetContent.keys()).filter(id => id !== sheetId);
+    newSheetId = otherIds[0];
+  }
+  
+  // Remove sheet content
+  sheetContent.delete(sheetId);
+  
+  // Switch to another sheet if needed
+  if (newSheetId !== null) {
+    saveCurrentSheetContent();
+    loadSheetContent(newSheetId);
+    currentSheetId = newSheetId;
+  }
+  
+  renderSheetsUI();
+  setTool('select');
+  updateTransform();
+  showToast(`Лист ${sheetId} удален`, 'success');
 }
 
 // ─── EVENTS ─────────────────────────────────────────────────────────────
