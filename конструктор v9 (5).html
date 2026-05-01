@@ -1040,12 +1040,28 @@ function serializeProject(){
 }
 
 function saveProject(){
-  const project=serializeProject();
-  // Save redoStack as well
-  project.redoStack = redoStack;
-  const blob=new Blob([JSON.stringify(project,null,2)],{type:'application/json;charset=utf-8'});
-  downloadBlob(blob,`combat_plan_${safeStamp()}.json`);
-  showToast(`Проект сохранен: ${project.elements.length} элементов, ${project.images.length} карт`,'success');
+  try {
+    const project=serializeProject();
+    // Save redoStack as well
+    project.redoStack = redoStack;
+    const blob=new Blob([JSON.stringify(project,null,2)],{type:'application/json;charset=utf-8'});
+    downloadBlob(blob,`combat_plan_${safeStamp()}.json`);
+    
+    // Count total elements and images across all sheets
+    let totalElements = 0;
+    let totalImages = 0;
+    if(project.sheets && Array.isArray(project.sheets)){
+      project.sheets.forEach(sheet => {
+        totalElements += (sheet.elements || []).length;
+        totalImages += (sheet.images || []).length;
+      });
+    }
+    
+    showToast(`Проект сохранен: ${project.sheets.length} листов, ${totalElements} элементов, ${totalImages} карт`,'success');
+  } catch(err) {
+    console.error('Error saving project:', err);
+    showToast('Ошибка сохранения проекта: ' + err.message, 'error');
+  }
 }
 
 function restoreImage(imData){
