@@ -70,6 +70,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .topbar{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:3px;background:rgba(23,23,42,.95);border:1px solid var(--border);border-radius:8px;padding:3px;backdrop-filter:blur(8px);box-shadow:var(--shadow)}
 .topbar .act-btn{border-radius:5px;padding:5px 11px;font-size:11px;border-left:none}
 
+/* Sheets bar at the top */
+.sheets-bar{position:absolute;top:0;left:0;right:0;height:42px;background:rgba(23,23,42,.96);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:6px;overflow-x:auto;overflow-y:hidden;z-index:20;backdrop-filter:blur(8px)}
+.sheets-bar::-webkit-scrollbar{height:4px}
+.sheets-bar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sheet-tab{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:11px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:.12s;flex-shrink:0}
+.sheet-tab:hover{background:rgba(255,255,255,.08)}
+.sheet-tab.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.sheet-tab .sheet-name{max-width:120px;overflow:hidden;text-overflow:ellipsis}
+.sheet-tab .close-sheet{width:16px;height:16px;border-radius:50%;border:none;background:rgba(255,255,255,.1);color:var(--text);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.12s}
+.sheet-tab .close-sheet:hover{background:var(--danger);color:#fff}
+.add-sheet-btn{width:32px;height:32px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.12s;flex-shrink:0}
+.add-sheet-btn:hover{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+
 .zoom-wrap{position:absolute;bottom:36px;right:14px;display:flex;flex-direction:column;gap:3px}
 .zoom-btn{width:30px;height:30px;background:rgba(23,23,42,.9);border:1px solid var(--border);color:var(--text);font-size:15px;border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.12s}
 .zoom-btn:hover{background:var(--accent-dim);border-color:var(--accent)}
@@ -154,6 +167,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 </div>
 
 <div class="canvas-area" id="canvasArea">
+  <!-- Sheets bar at the top -->
+  <div class="sheets-bar" id="sheetsBar">
+    <button class="add-sheet-btn" onclick="addSheet()" title="Добавить лист">+</button>
+  </div>
+  
   <svg id="mainSvg" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <pattern id="gridPattern" width="50" height="50" patternUnits="userSpaceOnUse">
@@ -447,6 +465,10 @@ let symPreview = null;
 let images = [], imgNextId = 1, selectedImgId = null, imgDrag = null;
 let lastDecorZoom = null;
 let uidSeq = 1;
+
+// Sheets management
+let sheets = [];
+let currentSheetId = null;
 
 // Sync state with AppState
 function syncState() {
@@ -989,6 +1011,9 @@ canvasArea.addEventListener('drop',e=>{ e.preventDefault(); for(const file of e.
 function cloneData(v){ return JSON.parse(JSON.stringify(v)); }
 
 function serializeProject(){
+  // Save current sheet state before serializing
+  saveCurrentSheetState();
+  
   return {
     app: 'combat-operations-constructor',
     version: 2,
@@ -999,22 +1024,16 @@ function serializeProject(){
       colorFriendly: document.getElementById('colorFriendly').value,
       colorEnemy: document.getElementById('colorEnemy').value
     },
-    elements: elements.map(el => ({
-      id: el.id,
-      type: el.type,
-      data: cloneData(el.data),
-      label: el.el.dataset.label || ''
+    sheets: sheets.map(sheet => ({
+      id: sheet.id,
+      name: sheet.name,
+      elements: sheet.elements,
+      images: sheet.images,
+      panX: sheet.panX,
+      panY: sheet.panY,
+      zoom: sheet.zoom
     })),
-    images: images.map(im => ({
-      id: im.id,
-      dataUrl: im.dataUrl,
-      cx: im.cx,
-      cy: im.cy,
-      w: im.w,
-      h: im.h,
-      origW: im.origW,
-      origH: im.origH
-    })),
+    currentSheetId,
     nextId,
     imgNextId
   };
@@ -1062,28 +1081,62 @@ function validateProject(project){
     if(s.activeForce && !['friendly','enemy'].includes(s.activeForce)) s.activeForce = 'friendly';
   }
   
-  // Validate elements array
-  if(!Array.isArray(project.elements)) project.elements = [];
-  project.elements = project.elements.filter(el => 
-    el && typeof el === 'object' && 
-    typeof el.type === 'string' && 
-    el.data && typeof el.data === 'object'
+  // Handle legacy format (single sheet with elements/images arrays)
+  if(Array.isArray(project.elements) || Array.isArray(project.images)){
+    project.sheets = [{
+      id: 1,
+      name: 'Лист 1',
+      elements: project.elements || [],
+      images: project.images || [],
+      panX: project.settings?.panX || 0,
+      panY: project.settings?.panY || 0,
+      zoom: project.settings?.zoom || 1
+    }];
+    project.currentSheetId = 1;
+  }
+  
+  // Validate sheets array
+  if(!Array.isArray(project.sheets)) project.sheets = [];
+  project.sheets = project.sheets.filter(sheet => 
+    sheet && typeof sheet === 'object' && 
+    typeof sheet.id === 'number' &&
+    Array.isArray(sheet.elements) && 
+    Array.isArray(sheet.images)
   );
   
-  // Sanitize labels to prevent XSS
-  project.elements.forEach(el => {
-    if(el.label) el.label = escapeHtml(el.label);
-    if(el.data && el.data.label) el.data.label = escapeHtml(el.data.label);
+  // Validate and sanitize each sheet's elements
+  project.sheets.forEach(sheet => {
+    sheet.elements = sheet.elements.filter(el => 
+      el && typeof el === 'object' && 
+      typeof el.type === 'string' && 
+      el.data && typeof el.data === 'object'
+    );
+    
+    // Sanitize labels to prevent XSS
+    sheet.elements.forEach(el => {
+      if(el.label) el.label = escapeHtml(el.label);
+      if(el.data && el.data.label) el.data.label = escapeHtml(el.data.label);
+    });
+    
+    // Validate images
+    sheet.images = sheet.images.filter(img =>
+      img && typeof img === 'object' &&
+      typeof img.dataUrl === 'string' &&
+      typeof img.cx === 'number' && typeof img.cy === 'number' &&
+      typeof img.w === 'number' && typeof img.h === 'number'
+    );
   });
   
-  // Validate images array
-  if(!Array.isArray(project.images)) project.images = [];
-  project.images = project.images.filter(img =>
-    img && typeof img === 'object' &&
-    typeof img.dataUrl === 'string' &&
-    typeof img.cx === 'number' && typeof img.cy === 'number' &&
-    typeof img.w === 'number' && typeof img.h === 'number'
-  );
+  // Ensure at least one sheet exists
+  if(project.sheets.length === 0){
+    project.sheets = [{ id: 1, name: 'Лист 1', elements: [], images: [], panX: 0, panY: 0, zoom: 1 }];
+    project.currentSheetId = 1;
+  }
+  
+  // Validate currentSheetId
+  if(!project.currentSheetId || !project.sheets.find(s => s.id === project.currentSheetId)){
+    project.currentSheetId = project.sheets[0].id;
+  }
   
   return project;
 }
@@ -1093,9 +1146,6 @@ function applyProject(project){
     // Validate and sanitize project data
     project = validateProject(project);
     
-    const loadedElements = Array.isArray(project.elements) ? project.elements : [];
-    const loadedImages = Array.isArray(project.images) ? project.images : [];
-
     // Clear DOM properly
     while(elemGroup.firstChild) elemGroup.removeChild(elemGroup.firstChild);
     while(imgGrp.firstChild) imgGrp.removeChild(imgGrp.firstChild);
@@ -1127,13 +1177,30 @@ function applyProject(project){
     if(Number.isFinite(savedExportScale)) document.getElementById('exportScale').value = String(clamp(savedExportScale, 1, 4));
     activeForce = s.activeForce === 'enemy' ? 'enemy' : 'friendly';
 
-    loadedImages.forEach(restoreImage);
-    loadedElements.forEach(snap => {
+    // Load sheets
+    sheets = project.sheets || [];
+    currentSheetId = project.currentSheetId || (sheets.length > 0 ? sheets[0].id : 1);
+    
+    // Load the current sheet's data
+    const currentSheet = sheets.find(sh => sh.id === currentSheetId);
+    if(currentSheet){
+      elements = [...(currentSheet.elements || [])];
+      images = [...(currentSheet.images || [])];
+      panX = currentSheet.panX || panX;
+      panY = currentSheet.panY || panY;
+      zoom = currentSheet.zoom || zoom;
+    }
+    
+    // Restore images
+    images.forEach(restoreImage);
+    
+    // Restore elements
+    elements.forEach(snap => {
       const data = cloneData(snap.data || {});
       const rawId = Number(snap.id);
       const id = Number.isFinite(rawId) && rawId > 0 ? rawId : nextId++;
       const g = spawnEl({id: id, type: snap.type, data: data, label: snap.label || ''});
-      elements.push({id: id, type: snap.type, data: data, el: g});
+      elemGroup.appendChild(g);
     });
 
     const maxElId = elements.length ? Math.max(...elements.map(e => e.id)) : 0;
@@ -1151,8 +1218,9 @@ function applyProject(project){
     lastDecorZoom = null;
     updateTransform();
     updateUndoRedoButtons();
+    renderSheetTabs();
     
-    showToast(`Проект загружен: ${elements.length} элементов, ${images.length} карт`, 'success');
+    showToast(`Проект загружен: ${sheets.length} листов, ${elements.length} элементов, ${images.length} карт`, 'success');
   } catch(err) {
     console.error('Error applying project:', err);
     throw new Error('Ошибка применения проекта: ' + escapeHtml(err.message));
@@ -1829,7 +1897,7 @@ svg.addEventListener('mousemove',e=>{ lastWorldMouse=getSvgPt(e); coordDisplay.t
 svg.addEventListener('mousedown', onMouseDown);
 svg.addEventListener('mousemove', onMouseMove);
 window.addEventListener('mouseup', onMouseUp);
-svg.addEventListener('click',  onDblClick);
+svg.addEventListener('dblclick', onDblClick);
 canvasArea.addEventListener('wheel', onWheel, {passive:false});
 document.addEventListener('keydown', onKeyDown);
 svg.addEventListener('contextmenu', e=>{ e.preventDefault(); onContextMenu(e); });
@@ -2197,6 +2265,11 @@ function onDblClick(e){
   showLabelMenu(e.clientX, e.clientY);
 }
 
+// Handle double-click on sheets bar to prevent opening label menu
+document.getElementById('sheetsBar').addEventListener('dblclick', function(e){
+  e.stopPropagation();
+});
+
 function onWheel(e){
   e.preventDefault();
   const f=e.deltaY<0?1.14:1/1.14, r=canvasArea.getBoundingClientRect();
@@ -2394,12 +2467,176 @@ function exportPNG(scaleOverride){
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
+
+// Initialize first sheet
+function initSheets() {
+  sheets = [{ id: 1, name: 'Лист 1', elements: [], images: [] }];
+  currentSheetId = 1;
+  renderSheetTabs();
+}
+
+function renderSheetTabs() {
+  const bar = document.getElementById('sheetsBar');
+  // Remove all existing tabs except the add button
+  const addBtn = bar.querySelector('.add-sheet-btn');
+  bar.innerHTML = '';
+  
+  sheets.forEach(sheet => {
+    const tab = document.createElement('div');
+    tab.className = 'sheet-tab' + (sheet.id === currentSheetId ? ' active' : '');
+    tab.onclick = () => switchToSheet(sheet.id);
+    
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'sheet-name';
+    nameSpan.textContent = sheet.name;
+    tab.appendChild(nameSpan);
+    
+    // Close button - only show if more than one sheet
+    if (sheets.length > 1) {
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'close-sheet';
+      closeBtn.innerHTML = '×';
+      closeBtn.title = 'Удалить лист';
+      closeBtn.onclick = (e) => { e.stopPropagation(); deleteSheet(sheet.id); };
+      tab.appendChild(closeBtn);
+    }
+    
+    bar.appendChild(tab);
+  });
+  
+  // Add the "+" button back
+  const newAddBtn = document.createElement('button');
+  newAddBtn.className = 'add-sheet-btn';
+  newAddBtn.innerHTML = '+';
+  newAddBtn.title = 'Добавить лист';
+  newAddBtn.onclick = addSheet;
+  bar.appendChild(newAddBtn);
+}
+
+function addSheet() {
+  const newId = sheets.length > 0 ? Math.max(...sheets.map(s => s.id)) + 1 : 1;
+  // Save current sheet state before creating new one
+  saveCurrentSheetState();
+  
+  const newSheet = { 
+    id: newId, 
+    name: `Лист ${newId}`, 
+    elements: [], 
+    images: [],
+    panX: 0,
+    panY: 0,
+    zoom: 1
+  };
+  sheets.push(newSheet);
+  switchToSheet(newId);
+  showToast(`Создан ${newSheet.name}`, 'success');
+}
+
+function switchToSheet(sheetId) {
+  if (sheetId === currentSheetId) return;
+  
+  // Save current sheet state
+  saveCurrentSheetState();
+  
+  // Switch to new sheet
+  currentSheetId = sheetId;
+  const sheet = sheets.find(s => s.id === sheetId);
+  if (!sheet) return;
+  
+  // Load sheet data
+  elements = [...sheet.elements];
+  images = [...sheet.images];
+  panX = sheet.panX || 0;
+  panY = sheet.panY || 0;
+  zoom = sheet.zoom || 1;
+  
+  // Clear and rebuild DOM
+  while(elemGroup.firstChild) elemGroup.removeChild(elemGroup.firstChild);
+  while(imgGrp.firstChild) imgGrp.removeChild(imgGrp.firstChild);
+  while(selGrp.firstChild) selGrp.removeChild(selGrp.firstChild);
+  while(previewGrp.firstChild) previewGrp.removeChild(previewGrp.firstChild);
+  
+  // Restore images
+  images.forEach(restoreImage);
+  
+  // Restore elements
+  elements.forEach(snap => {
+    const data = cloneData(snap.data || {});
+    const g = spawnEl({id: snap.id, type: snap.type, data: data, label: snap.label || ''});
+    elemGroup.appendChild(g);
+  });
+  
+  // Update UI
+  selectedIds.clear();
+  selectedImgId = null;
+  updateTransform();
+  updateStatus();
+  renderSheetTabs();
+  
+  showToast(`Переключен на ${sheet.name}`, 'success');
+}
+
+function saveCurrentSheetState() {
+  const sheet = sheets.find(s => s.id === currentSheetId);
+  if (!sheet) return;
+  
+  sheet.elements = elements.map(el => ({
+    id: el.id,
+    type: el.type,
+    data: cloneData(el.data),
+    label: el.el.dataset.label || ''
+  }));
+  
+  sheet.images = images.map(im => ({
+    id: im.id,
+    dataUrl: im.dataUrl,
+    cx: im.cx,
+    cy: im.cy,
+    w: im.w,
+    h: im.h,
+    origW: im.origW,
+    origH: im.origH
+  }));
+  
+  sheet.panX = panX;
+  sheet.panY = panY;
+  sheet.zoom = zoom;
+}
+
+function deleteSheet(sheetId) {
+  if (sheets.length <= 1) {
+    showToast('Нельзя удалить единственный лист', 'error');
+    return;
+  }
+  
+  const sheet = sheets.find(s => s.id === sheetId);
+  if (!sheet) return;
+  
+  if (!confirm(`Удалить лист "${sheet.name}"?`)) return;
+  
+  // If deleting current sheet, switch to another one first
+  if (sheetId === currentSheetId) {
+    const otherSheet = sheets.find(s => s.id !== sheetId);
+    if (otherSheet) {
+      switchToSheet(otherSheet.id);
+    }
+  }
+  
+  // Remove from array
+  sheets = sheets.filter(s => s.id !== sheetId);
+  renderSheetTabs();
+  
+  showToast(`Лист "${sheet.name}" удален`, 'success');
+}
+
 ['colorFriendly','colorEnemy'].forEach(id=>{
   document.getElementById(id).addEventListener('input',()=>{
     setForceSide(activeForce);
     if(currentTool==='symbol'&&currentSymbol){ createSymPreview(); refreshSymPreviewPos(); }
   });
 });
+
+initSheets();
 setForceSide('friendly');
 setTool('select');
 updateTransform();
