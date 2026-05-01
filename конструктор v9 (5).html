@@ -1024,6 +1024,23 @@ function restoreImage(imData){
   return obj;
 }
 
+function restoreImageToContent(imData){
+  if(!imData||!imData.dataUrl) return null;
+  const svgImg=NS('image');
+  const w=finiteNumber(imData.w||imData.origW,800), h=finiteNumber(imData.h||imData.origH,600);
+  const cx=finiteNumber(imData.cx,0), cy=finiteNumber(imData.cy,0);
+  svgImg.setAttribute('href',imData.dataUrl);
+  svgImg.setAttribute('width',w); svgImg.setAttribute('height',h);
+  svgImg.setAttribute('x',cx-w/2); svgImg.setAttribute('y',cy-h/2);
+  svgImg.setAttribute('preserveAspectRatio','none');
+  const rawId=Number(imData.id);
+  const id=Number.isFinite(rawId)&&rawId>0?rawId:imgNextId++;
+  const obj={id,origW:finiteNumber(imData.origW,w),origH:finiteNumber(imData.origH,h),cx,cy,w,h,el:svgImg,dataUrl:imData.dataUrl};
+  // Don't add to global images array - will be added by loadSheetContent
+  imgGrp.appendChild(svgImg); attachImageEvents(svgImg,obj);
+  return obj;
+}
+
 /** Validate project data structure for safety */
 function validateProject(project){
   if(!project || typeof project !== 'object') 
@@ -1114,13 +1131,13 @@ function applyProject(project){
         // Create sheet content structure
         const content = { elements: [], images: [] };
         
-        // Restore images for this sheet
+        // Restore images for this sheet (without adding to global images array)
         for (const imData of sheetImgs) {
-          const imObj = restoreImage(imData);
+          const imObj = restoreImageToContent(imData);
           if (imObj) content.images.push(imObj);
         }
         
-        // Restore elements for this sheet
+        // Restore elements for this sheet (without adding to global elements array)
         for (const snap of sheetElts) {
           const data = cloneData(snap.data || {});
           const rawId = Number(snap.id);
@@ -1142,8 +1159,10 @@ function applyProject(project){
       
       const content = { elements: [], images: [] };
       
-      loadedImages.forEach(restoreImage);
-      images.forEach(im => content.images.push(im));
+      loadedImages.forEach(imData => {
+        const imObj = restoreImageToContent(imData);
+        if (imObj) content.images.push(imObj);
+      });
       
       loadedElements.forEach(snap => {
         const data = cloneData(snap.data || {});
@@ -1815,7 +1834,7 @@ function loadSheetContent(sheetId) {
   
   // Restore images
   for (const imData of content.images) {
-    const imObj = restoreImage({
+    const imObj = restoreImageToContent({
       id: imData.id,
       dataUrl: imData.dataUrl,
       cx: imData.cx,
@@ -2313,6 +2332,8 @@ function exportClone(bounds,scale,forRaster){
 
 function exportSource(scaleOverride,forRaster){
   updateTransform();
+  // Make sure we have the latest content saved
+  saveCurrentSheetContent();
   const bounds=contentBounds();
   const requested=finiteNumber(scaleOverride||document.getElementById('exportScale').value,2);
   const maxScale=Math.min(4,12000/bounds.width,12000/bounds.height);
