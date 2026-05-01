@@ -2598,8 +2598,11 @@ function switchToSheet(sheetId) {
   while(selGrp.firstChild) selGrp.removeChild(selGrp.firstChild);
   while(previewGrp.firstChild) previewGrp.removeChild(previewGrp.firstChild);
   
+  // Clear images array before restoring
+  images = [];
+  
   // Restore images
-  images.forEach(restoreImage);
+  sheet.images.forEach(restoreImage);
   
   // Restore elements
   elements.forEach(snap => {
@@ -2617,6 +2620,9 @@ function switchToSheet(sheetId) {
   
   // Восстанавливаем текущий инструмент и состояние canvasArea
   setTool(currentTool, currentSymbol ? document.querySelector(`.sym-btn[data-symbol="${currentSymbol}"]`) : null);
+  
+  // Обновляем интерактивность изображений после переключения
+  updateImageInteractivity();
   
   showToast(`Переключен на ${sheet.name}`, 'success');
 }
