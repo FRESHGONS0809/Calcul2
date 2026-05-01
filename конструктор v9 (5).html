@@ -1230,16 +1230,21 @@ function applyProject(project){
       zoom = currentSheet.zoom || zoom;
     }
     
-    // Restore images
-    images.forEach(restoreImage);
+    // Clear arrays to be repopulated properly
+    elements = [];
+    images = [];
     
-    // Restore elements
-    elements.forEach(snap => {
+    // Restore images first
+    (currentSheet?.images || []).forEach(restoreImage);
+    
+    // Restore elements and rebuild the elements array
+    (currentSheet?.elements || []).forEach(snap => {
       const data = cloneData(snap.data || {});
       const rawId = Number(snap.id);
       const id = Number.isFinite(rawId) && rawId > 0 ? rawId : nextId++;
       const g = spawnEl({id: id, type: snap.type, data: data, label: snap.label || ''});
       elemGroup.appendChild(g);
+      elements.push({id: id, type: snap.type, data: data, el: g, label: snap.label || ''});
     });
 
     const maxElId = elements.length ? Math.max(...elements.map(e => e.id)) : 0;
@@ -1257,6 +1262,7 @@ function applyProject(project){
     lastDecorZoom = null;
     updateTransform();
     updateUndoRedoButtons();
+    updateImageInteractivity();
     renderSheetTabs();
     
     showToast(`Проект загружен: ${sheets.length} листов, ${elements.length} элементов, ${images.length} карт`, 'success');
