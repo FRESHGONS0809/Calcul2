@@ -1909,29 +1909,48 @@ function deleteSheet(sheetId) {
     return;
   }
   
-  if (!confirm(`Удалить лист ${sheetId}?`)) return;
+  // Create custom confirmation dialog
+  const dialog = document.createElement('div');
+  dialog.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(23,23,42,.98);border:1px solid var(--border);border-radius:8px;padding:16px;box-shadow:var(--shadow);z-index:1000;min-width:280px;';
+  dialog.innerHTML = `
+    <h4 style="font-size:13px;margin-bottom:12px;color:var(--danger);font-weight:600;">Удалить лист ${sheetId}?</h4>
+    <p style="font-size:11px;color:var(--text-dim);margin-bottom:16px;">Все элементы на этом листе будут безвозвратно удалены.</p>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button id="delCancel" style="padding:6px 14px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);border-radius:5px;cursor:pointer;font-size:11px;">Отмена</button>
+      <button id="delConfirm" style="padding:6px 14px;border:1px solid var(--danger);background:rgba(255,80,80,.15);color:var(--danger);border-radius:5px;cursor:pointer;font-size:11px;">Удалить</button>
+    </div>
+  `;
+  document.body.appendChild(dialog);
   
-  // If deleting current sheet, switch to another one first
-  let newSheetId = null;
-  if (sheetId === currentSheetId) {
-    const otherIds = Array.from(sheetContent.keys()).filter(id => id !== sheetId);
-    newSheetId = otherIds[0];
-  }
+  document.getElementById('delCancel').addEventListener('click', () => {
+    document.body.removeChild(dialog);
+  });
   
-  // Remove sheet content
-  sheetContent.delete(sheetId);
-  
-  // Switch to another sheet if needed
-  if (newSheetId !== null) {
-    saveCurrentSheetContent();
-    loadSheetContent(newSheetId);
-    currentSheetId = newSheetId;
-  }
-  
-  renderSheetsUI();
-  setTool('select');
-  updateTransform();
-  showToast(`Лист ${sheetId} удален`, 'success');
+  document.getElementById('delConfirm').addEventListener('click', () => {
+    document.body.removeChild(dialog);
+    
+    // If deleting current sheet, switch to another one first
+    let newSheetId = null;
+    if (sheetId === currentSheetId) {
+      const otherIds = Array.from(sheetContent.keys()).filter(id => id !== sheetId);
+      newSheetId = otherIds[0];
+    }
+    
+    // Remove sheet content
+    sheetContent.delete(sheetId);
+    
+    // Switch to another sheet if needed
+    if (newSheetId !== null) {
+      saveCurrentSheetContent();
+      loadSheetContent(newSheetId);
+      currentSheetId = newSheetId;
+    }
+    
+    renderSheetsUI();
+    setTool('select');
+    updateTransform();
+    showToast(`Лист ${sheetId} удален`, 'success');
+  });
 }
 
 // ─── EVENTS ─────────────────────────────────────────────────────────────
@@ -2310,15 +2329,64 @@ function exportSVG(){
 }
 
 function showExportDialog(){
-  const scale = prompt('Выберите качество экспорта (1, 2, 3 или 4):', '2');
-  if(scale === null) return;
-  const numScale = parseInt(scale, 10);
-  if(![1,2,3,4].includes(numScale)){
-    showToast('Неверное значение. Используйте 1, 2, 3 или 4.', 'error');
-    return;
-  }
-  document.getElementById('exportScale').value = String(numScale);
-  exportPNG();
+  // Create a custom dialog for quality selection
+  const dialog = document.createElement('div');
+  dialog.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(23,23,42,.98);border:1px solid var(--border);border-radius:8px;padding:16px;box-shadow:var(--shadow);z-index:1000;min-width:280px;';
+  dialog.innerHTML = `
+    <h4 style="font-size:13px;margin-bottom:12px;color:var(--accent);font-weight:600;">Качество экспорта PNG</h4>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="quality-btn" data-scale="1" style="flex:1;padding:8px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);border-radius:5px;cursor:pointer;font-size:11px;">×1</button>
+      <button class="quality-btn" data-scale="2" style="flex:1;padding:8px;border:1px solid var(--border);background:rgba(240,192,64,.25);border-color:var(--accent);color:var(--accent);border-radius:5px;cursor:pointer;font-size:11px;">×2</button>
+      <button class="quality-btn" data-scale="3" style="flex:1;padding:8px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);border-radius:5px;cursor:pointer;font-size:11px;">×3</button>
+      <button class="quality-btn" data-scale="4" style="flex:1;padding:8px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);border-radius:5px;cursor:pointer;font-size:11px;">×4</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button id="exportCancel" style="padding:6px 14px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);border-radius:5px;cursor:pointer;font-size:11px;">Отмена</button>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+  
+  let selectedScale = 2;
+  
+  dialog.querySelectorAll('.quality-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedScale = parseInt(btn.dataset.scale, 10);
+      dialog.querySelectorAll('.quality-btn').forEach(b => {
+        b.style.background = 'rgba(255,255,255,.05)';
+        b.style.borderColor = 'var(--border)';
+        b.style.color = 'var(--text)';
+      });
+      btn.style.background = 'rgba(240,192,64,.25)';
+      btn.style.borderColor = 'var(--accent)';
+      btn.style.color = 'var(--accent)';
+    });
+  });
+  
+  document.getElementById('exportCancel').addEventListener('click', () => {
+    document.body.removeChild(dialog);
+  });
+  
+  // Allow clicking quality button to export immediately
+  dialog.querySelectorAll('.quality-btn').forEach(btn => {
+    btn.addEventListener('dblclick', () => {
+      const scale = parseInt(btn.dataset.scale, 10);
+      document.getElementById('exportScale').value = String(scale);
+      document.body.removeChild(dialog);
+      exportPNG();
+    });
+  });
+  
+  // Add export button after selection
+  const exportBtn = document.createElement('button');
+  exportBtn.id = 'exportConfirm';
+  exportBtn.textContent = 'Экспорт';
+  exportBtn.style.cssText = 'padding:6px 14px;border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);border-radius:5px;cursor:pointer;font-size:11px;margin-left:8px;';
+  exportBtn.addEventListener('click', () => {
+    document.getElementById('exportScale').value = String(selectedScale);
+    document.body.removeChild(dialog);
+    exportPNG();
+  });
+  dialog.querySelector('div:last-child').appendChild(exportBtn);
 }
 
 function exportPNG(){
