@@ -1080,7 +1080,7 @@ function validateProject(project){
   if(!Array.isArray(project.images)) project.images = [];
   project.images = project.images.filter(img =>
     img && typeof img === 'object' &&
-    typeof img.src === 'string' &&
+    typeof img.dataUrl === 'string' &&
     typeof img.cx === 'number' && typeof img.cy === 'number' &&
     typeof img.w === 'number' && typeof img.h === 'number'
   );
@@ -1829,7 +1829,7 @@ svg.addEventListener('mousemove',e=>{ lastWorldMouse=getSvgPt(e); coordDisplay.t
 svg.addEventListener('mousedown', onMouseDown);
 svg.addEventListener('mousemove', onMouseMove);
 window.addEventListener('mouseup', onMouseUp);
-svg.addEventListener('dblclick',  onDblClick);
+svg.addEventListener('click',  onDblClick);
 canvasArea.addEventListener('wheel', onWheel, {passive:false});
 document.addEventListener('keydown', onKeyDown);
 svg.addEventListener('contextmenu', e=>{ e.preventDefault(); onContextMenu(e); });
