@@ -127,6 +127,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <div class="divider"></div>
       <button class="act-btn" onclick="saveProject();toggleFileMenu()" style="border-left:none;border-radius:0;"><span class="icon">💾</span> Сохранить проект</button>
       <button class="act-btn" onclick="document.getElementById('projectInput').click();toggleFileMenu()" style="border-left:none;border-radius:0;"><span class="icon">📂</span> Загрузить проект</button>
+      <div class="divider"></div>
+      <button class="act-btn" onclick="showExportDialog();toggleFileMenu()" style="border-left:none;border-radius:0;"><span class="icon">💾</span> Экспорт PNG</button>
+      <button class="act-btn" onclick="exportSVG();toggleFileMenu()" style="border-left:none;border-radius:0;"><span class="icon">▣</span> Экспорт SVG</button>
     </div>
     <div class="divider"></div>
 
@@ -190,8 +193,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <button class="act-btn" onclick="undoAction()"><span class="icon">↩</span> Отменить (Ctrl+Z)</button>
     <button class="act-btn" onclick="redoAction()"><span class="icon">↪</span> Вперед (Ctrl+Y)</button>
     <button class="act-btn" onclick="clearAll()"><span class="icon">🗑</span> Очистить всё</button>
-    <button class="act-btn" onclick="showExportDialog()"><span class="icon">💾</span> Экспорт PNG</button>
-    <button class="act-btn" onclick="exportSVG()"><span class="icon">▣</span> Экспорт SVG</button>
   </div>
 </div>
 
@@ -2127,6 +2128,21 @@ function drawRubberBand(sx,sy,ex,ey){
 function onDblClick(e){
   if(currentTool!=='select'||selectedIds.size!==1) return;
   const elData=elements.find(el=>el.id===Array.from(selectedIds)[0]); if(!elData) return;
+  
+  // Edit text for text elements
+  if(elData.type === 'text'){
+    const newText = prompt('Изменить текст:', elData.data.text || '');
+    if(newText !== null && newText.trim()){
+      saveHistory();
+      elData.data.text = newText.trim();
+      rebuildEl(elData);
+      updateLabel(elData);
+      drawSelBox();
+    }
+    return;
+  }
+  
+  // Edit label for other elements
   const label=prompt('Подпись:',elData.el.dataset.label||'');
   if(label!==null){ elData.el.dataset.label=label; updateLabel(elData); }
 }
@@ -2149,7 +2165,7 @@ function onKeyDown(e){
   if(e.key==='Escape'){ setTool('select'); return; }
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)&&selectedIds.size){
     e.preventDefault();
-    const step=(e.shiftKey?20:5)/zoom;
+    const step=(e.shiftKey?40:10)/zoom;
     const dx=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0;
     const dy=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;
     saveHistory();
