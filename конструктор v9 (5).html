@@ -2585,16 +2585,6 @@ function switchToSheet(sheetId) {
   const sheet = sheets.find(s => s.id === sheetId);
   if (!sheet) return;
   
-  // Reset drawing and interaction states
-  isPanning = false;
-  isDrawing = false;
-  imgDrag = null;
-  dragState = null;
-  resizeState = null;
-  rubberState = null;
-  drawPts = [];
-  lastAddedPt = null;
-  
   // Load sheet data
   elements = [...sheet.elements];
   images = [...sheet.images];
@@ -2607,6 +2597,16 @@ function switchToSheet(sheetId) {
   while(imgGrp.firstChild) imgGrp.removeChild(imgGrp.firstChild);
   while(selGrp.firstChild) selGrp.removeChild(selGrp.firstChild);
   while(previewGrp.firstChild) previewGrp.removeChild(previewGrp.firstChild);
+  
+  // Reset drawing and interaction states
+  isPanning = false;
+  isDrawing = false;
+  imgDrag = null;
+  dragState = null;
+  resizeState = null;
+  rubberState = null;
+  drawPts = [];
+  lastAddedPt = null;
   
   // Clear images array before restoring
   images = [];
