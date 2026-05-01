@@ -1034,7 +1034,7 @@ function serializeProject(){
     timestamp: new Date().toISOString(),
     settings: {
       panX, panY, zoom, activeForce,
-      exportScale: document.getElementById('exportScale').value,
+      exportScale: 2, // Default value since there's no persistent UI element
       colorFriendly: document.getElementById('colorFriendly').value,
       colorEnemy: document.getElementById('colorEnemy').value
     },
@@ -1213,8 +1213,7 @@ function applyProject(project){
     
     if(s.colorFriendly) document.getElementById('colorFriendly').value = s.colorFriendly;
     if(s.colorEnemy) document.getElementById('colorEnemy').value = s.colorEnemy;
-    const savedExportScale = Number(s.exportScale);
-    if(Number.isFinite(savedExportScale)) document.getElementById('exportScale').value = String(clamp(savedExportScale, 1, 4));
+    // exportScale is no longer stored in a persistent UI element, so we skip setting it
     activeForce = s.activeForce === 'enemy' ? 'enemy' : 'friendly';
 
     // Load sheets
@@ -2468,7 +2467,8 @@ function exportClone(bounds,scale,forRaster){
 function exportSource(scaleOverride,forRaster){
   updateTransform();
   const bounds=contentBounds();
-  const requested=finiteNumber(scaleOverride||document.getElementById('exportScale').value,2);
+  // Use scaleOverride directly or default to 2 (since there's no persistent UI element)
+  const requested=finiteNumber(scaleOverride||2,2);
   const maxScale=Math.min(4,12000/bounds.width,12000/bounds.height);
   const scale=clamp(Math.min(requested,maxScale),0.1,4);
   const {clone,outW,outH}=exportClone(bounds,scale,forRaster);
